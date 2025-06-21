@@ -1,0 +1,98 @@
+Great batch! Let’s break down these **file path-related settings** in Azure Data Factory (ADF), particularly used in **datasets or source settings** (e.g., for Blob Storage, Data Lake, etc.).
+
+---
+
+### 📁 **File path type**
+
+Specifies **how ADF should locate and read files** from the source location (e.g., Azure Blob, ADLS).
+
+Common types:
+
+1. **File path in dataset** – Static path defined inside the dataset.
+2. **Prefix** – Reads all files that start with a specific text.
+3. **Wildcard file path** – Matches files using wildcard patterns like `*.csv`, `2025*.json`, etc.
+4. **List of files** – You provide an array of specific file names to process.
+
+---
+
+### 📂 **File path in dataset**
+
+You define a **fixed or parameterized path** directly inside the dataset (container + folder + filename).
+
+✅ Good for:
+
+* Simple pipelines with fixed folder/file structure
+* Parameterized paths based on pipeline variables
+
+Example: `container/rawdata/2025/06/sales.csv`
+
+---
+
+### 🔠 **Prefix**
+
+Reads **all files** that **start with a specific string** in their name.
+
+Example:
+
+* Prefix: `sales_2025_`
+* Matches: `sales_2025_Jan.csv`, `sales_2025_Feb.csv`, etc.
+
+✅ Good for:
+
+* Picking up files uploaded daily/monthly using a naming convention
+* Avoids hardcoding filenames
+
+---
+
+### 🌟 **Wildcard file path**
+
+Use **wildcards** to match file names or paths dynamically.
+
+Examples:
+
+* `*.csv` → all CSV files
+* `2025*.json` → JSON files starting with `2025`
+* `*/data_*.csv` → files inside any subfolder
+
+✅ Good for:
+
+* Processing multiple files in one run
+* Flexible folder/file patterns
+
+---
+
+### 🗃️ **List of files**
+
+You provide a **manually defined array** of files or paths.
+
+* Usually done dynamically by:
+
+  * Using a **Get Metadata** activity
+  * Feeding output into a **ForEach loop**
+
+✅ Good for:
+
+* Custom logic to select specific files
+* Combining with filters or conditions
+
+Example:
+
+```json
+[
+  "sales_2025_Jan.csv",
+  "sales_2025_Feb.csv"
+]
+```
+
+---
+
+### 🚀 Summary Table:
+
+| Setting              | Purpose                                   | Good For                                   |
+| -------------------- | ----------------------------------------- | ------------------------------------------ |
+| File path in dataset | Static or parameterized file path         | Fixed files or param-based logic           |
+| Prefix               | Match files by name prefix                | Dynamic file selection by naming pattern   |
+| Wildcard file path   | Use `*` or `?` to match multiple files    | Bulk file processing, dynamic input        |
+| List of files        | Pass a list of files manually/dynamically | Fine-grained control with logic or filters |
+
+---
