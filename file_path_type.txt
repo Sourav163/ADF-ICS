@@ -1,4 +1,4 @@
-Great batch! Let’s break down these **file path-related settings** in Azure Data Factory (ADF), particularly used in **datasets or source settings** (e.g., for Blob Storage, Data Lake, etc.).
+Let’s break down these **file path-related settings** in Azure Data Factory (ADF), particularly used in **datasets or source settings** (e.g., for Blob Storage, Data Lake, etc.).
 
 ---
 

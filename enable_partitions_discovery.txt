@@ -1,0 +1,54 @@
+### 🧩 **Enable Partition Discovery**
+
+This setting is used in **Azure Data Factory (ADF)** when reading data from **folder-based partitioned file structures**, especially in **Azure Data Lake Storage (ADLS)** or **Azure Blob Storage**.
+
+---
+
+### 📌 **What does it mean?**
+
+When **partition discovery is enabled**, ADF automatically:
+
+* **Detects subfolders** that represent **partition columns** (like year, month, region, etc.)
+* **Extracts those folder names** as part of the dataset columns
+
+---
+
+### 📁 Example:
+
+Suppose your files are stored like this:
+
+```
+/raw/sales/year=2025/month=06/day=13/file.csv
+```
+
+If **Enable Partition Discovery** is ON:
+
+* ADF reads `year=2025`, `month=06`, `day=13` as **columns** in the data
+* You don’t have to manually map these
+
+---
+
+### 🔧 How to Enable It:
+
+* In the dataset settings, check the **“Enable partition discovery”** checkbox
+* Works with file formats like **Parquet, CSV, or JSON**
+
+---
+
+### ✅ Use Cases:
+
+| Scenario                             | Benefit                           |
+| ------------------------------------ | --------------------------------- |
+| Folder names used as data dimensions | Automatically adds as columns     |
+| Loading only specific partitions     | Can filter using partition values |
+| Time-series data stored by folders   | No manual parsing of paths        |
+
+---
+
+### ⚠️ Notes:
+
+* Works best with **folder structure = `col=value`**
+* You must **check the option manually** in the dataset
+* Columns are added **automatically** during source reading
+
+---

@@ -1,0 +1,73 @@
+This confusion often arises because both **Wildcard file path** and **Prefix** in Azure Data Factory (ADF) appear to serve similar purposes—filtering files from a folder. However, they serve different use cases and behave differently.
+
+---
+
+### 🔹 1. **Wildcard File Path**
+
+* **Purpose**: Match files using wildcards (`*`, `?`) like traditional pattern matching.
+* **File Path Type**: Set to `Wildcard file path`
+* **Format**:
+
+  * `folder/subfolder/*.csv` — Matches all `.csv` files
+  * `folder/data2024??.json` — Matches files like `data202401.json`, `data202402.json`
+* **Supports complex filtering logic** using wildcards.
+
+✅ **Use Case**:
+
+> You want to load all files that match a certain pattern (e.g., `sales_*.csv`) within a folder.
+
+---
+
+### 🔹 2. **Prefix**
+
+* **Purpose**: Load **all files starting with a specific prefix**.
+* **File Path Type**: Set to `Prefix`
+* **Format**:
+
+  * `invoice_` → loads `invoice_Jan.csv`, `invoice_Feb.csv`
+* **Internally performs string-based filtering**, not pattern-based matching like wildcards.
+
+✅ **Use Case**:
+
+> You only want to load files that start with a fixed string prefix like `daily_`, `errorlog_`, etc.
+
+---
+
+### 🔄 Key Differences
+
+| Feature                  | Wildcard File Path       | Prefix                     |
+| ------------------------ | ------------------------ | -------------------------- |
+| Matching Style           | Pattern (e.g., `*`, `?`) | StartsWith (simple string) |
+| Flexibility              | High (complex patterns)  | Low (only startsWith)      |
+| File Path Type Option    | `Wildcard file path`     | `Prefix`                   |
+| Example                  | `sales_*.csv`            | `sales_`                   |
+| File extension filtering | Yes                      | Only if part of prefix     |
+
+---
+
+### 🧠 Why Microsoft includes both?
+
+* **Wildcard** is for more **dynamic and advanced file selection.**
+* **Prefix** is useful in cases where **you want simplicity and performance.**
+  It can be **faster** in certain storage types (like Azure Blob) as it's optimized for prefix-based listing.
+
+---
+
+### 🔍 Real-world Example:
+
+Say you have this in your blob:
+
+```
+report_202401.csv
+report_202402.csv
+report_backup_202401.csv
+summary_202401.csv
+```
+
+| You Want To Load                     | Use Prefix           | Use Wildcard File Path |
+| ------------------------------------ | -------------------- | ---------------------- |
+| Only files starting with `report_`   | ✅ Prefix = `report_` | ✅ `report_*.csv`       |
+| Only files with `backup` in the name | ❌ Not possible       | ✅ `*backup*.csv`       |
+| Only `.csv` files                    | ❌                    | ✅ `*.csv`              |
+
+---

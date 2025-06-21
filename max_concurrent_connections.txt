@@ -1,0 +1,63 @@
+---
+
+### 🔗 **Max Concurrent Connections** in **Azure Data Factory (ADF)**
+
+---
+
+### 🧠 **What it means:**
+
+This setting controls **how many simultaneous connections** ADF can make **to a data store** (source or sink) **during a copy activity**.
+
+---
+
+### 📌 Where it's found:
+
+In the **source or sink tab** of a **Copy Data activity** under "Additional Settings."
+
+---
+
+### 🔧 Purpose:
+
+> It limits or increases **parallelism** when transferring multiple files, partitions, or tables.
+
+---
+
+### 💡 Example:
+
+Suppose you're copying **100 CSV files** from Blob storage:
+
+* If **Max Concurrent Connections = 5** → only 5 files are copied **at the same time**
+* The rest are queued and processed in **batches**
+
+---
+
+### ✅ When to adjust:
+
+| Situation                              | Suggested Setting                        |
+| -------------------------------------- | ---------------------------------------- |
+| You want faster data copy (more speed) | Increase max concurrent connections      |
+| Source/destination system has limits   | Lower it to avoid overload or throttling |
+| Large data volume with many files      | Increase for better parallel performance |
+| Source API has rate limits             | Lower it to respect API throttling       |
+
+---
+
+### ⚠️ Notes:
+
+* **Default value:** Usually **4**, but depends on integration runtime & connector
+* **Too high a value** might cause **network issues or service throttling**
+* Tune based on **source system capacity** and **network throughput**
+
+---
+
+### 🛠️ Real Example:
+
+Copying from Blob Storage:
+
+```json
+"maxConcurrentConnections": 8
+```
+
+This means ADF will copy up to 8 blobs **at once** using 8 parallel threads.
+
+---
