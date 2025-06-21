@@ -1,0 +1,71 @@
+---
+
+## 🔒 **Bulk Insert Table Lock: Yes / No**
+
+This setting appears when you're using **Bulk Insert** into SQL-based sinks like:
+
+* **Azure SQL Database**
+* **SQL Server**
+* **Synapse SQL pool**
+
+---
+
+### 🔹 **What it does:**
+
+Controls whether ADF will **lock the entire table** during the **bulk insert operation**.
+
+---
+
+### ✅ **Yes (Enable Table Lock)**
+
+- ADF will place a **table-level lock**.
+- ✅ Good for:
+
+  - **High-speed bulk inserts**
+  - **Large data loads** with minimal contention
+
+- ⚠️ Downside:
+
+  - **Other queries/transactions are blocked** from reading/writing to the table until the load is done
+
+🧠 Think of it as:
+
+```sql
+BULK INSERT WITH (TABLOCK)
+```
+
+---
+
+### ❌ **No (Do Not Lock Table)**
+
+- ADF inserts rows without locking the whole table.
+- ✅ Good for:
+
+  - **Concurrent usage scenarios** (users/apps querying the same table)
+  - Avoiding contention during business hours
+
+- ⚠️ Slightly slower inserts, especially for large volumes
+
+🧠 Think of it as:
+
+```sql
+BULK INSERT without TABLOCK option
+```
+
+---
+
+### 🧾 Summary Table:
+
+| Option  | Locks Table? | Performance | Suitable When                          |
+| ------- | ------------ | ----------- | -------------------------------------- |
+| **Yes** | ✅ Yes       | 🔼 Faster   | After-hours bulk loads, staging tables |
+| **No**  | ❌ No        | 🔽 Slower   | Table is actively queried or shared    |
+
+---
+
+### 💡 Best Practice:
+
+- Use **Yes (table lock)** during **nightly ETL jobs**, when no other processes are reading from or writing to the target table.
+- Use **No** for **incremental loads or live systems** to avoid locking issues.
+
+---

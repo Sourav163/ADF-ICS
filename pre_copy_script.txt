@@ -1,0 +1,80 @@
+---
+
+## 🧾 **Pre-copy Script** in **Azure Data Factory**
+
+---
+
+### 🔹 **What is it?**
+
+The **Pre-copy script** is an **optional SQL statement** that runs **before the Copy Data activity starts** — **only for SQL-based sinks** like:
+
+* **Azure SQL Database**
+* **SQL Server**
+* **Synapse Analytics**
+
+---
+
+### 🎯 **Purpose:**
+
+To **prepare the destination (sink)** before loading new data.
+
+---
+
+### 🔧 **What can you do with it?**
+
+✅ Common use cases:
+
+1. **Truncate the destination table**
+
+   ```sql
+   TRUNCATE TABLE sales_staging;
+   ```
+
+2. **Delete specific rows**
+
+   ```sql
+   DELETE FROM sales_staging WHERE sale_date = '2025-06-13';
+   ```
+
+3. **Drop and recreate a temp table**
+
+   ```sql
+   DROP TABLE IF EXISTS temp_load;
+   CREATE TABLE temp_load (id INT, name NVARCHAR(50));
+   ```
+
+4. **Disable constraints/indexes** (for faster loads)
+
+5. **Audit logging or pre-checks**
+
+---
+
+### 💡 Where is it configured?
+
+Inside the **Sink tab** of a **Copy Data activity**, scroll to **"Pre-copy script"** and enter the SQL command.
+
+> ADF will **run this SQL** using the **sink linked service** before copying any data.
+
+---
+
+### ⚠️ Notes:
+
+* It must be a **valid SQL statement**
+* It executes **once per copy activity**, before actual data movement
+* Only available when the **sink is a database**, not files (Blob, ADLS, etc.)
+
+---
+
+### 🧠 Example Scenario:
+
+> You want to load **daily sales data** to a **staging table**, but always clear the old data first.
+
+**Pre-copy script**:
+
+```sql
+TRUNCATE TABLE staging_sales;
+```
+
+Then the copy activity writes fresh data into it.
+
+---

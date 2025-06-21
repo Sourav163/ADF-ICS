@@ -103,7 +103,6 @@ These file path strategies can significantly improve the flexibility and scalabi
 <br>
 <br>
 
-
 # 🎯 Wildcard File Path vs Prefix in Azure Data Factory
 
 This guide clears up the common confusion between **Wildcard File Path** and **Prefix** in **Azure Data Factory (ADF)**. While both filter files in a folder, they serve **different purposes** and behave **differently**.
@@ -121,6 +120,7 @@ This guide clears up the common confusion between **Wildcard File Path** and **P
 - `folder/data2024??.json` → matches `data202401.json`, `data202402.json`, etc.
 
 ✅ **Use Case**:
+
 > Load all files that match a certain pattern like `sales_*.csv` within a folder
 
 ---
@@ -135,19 +135,20 @@ This guide clears up the common confusion between **Wildcard File Path** and **P
 - Prefix: `invoice_` → loads `invoice_Jan.csv`, `invoice_Feb.csv`
 
 ✅ **Use Case**:
+
 > Load files starting with a consistent naming pattern like `daily_`, `log_`, `error_`
 
 ---
 
 ## 🔄 Key Differences
 
-| Feature                  | Wildcard File Path       | Prefix                     |
-|--------------------------|--------------------------|----------------------------|
-| Matching Style           | Pattern (`*`, `?`)        | StartsWith (plain string)  |
-| Flexibility              | High (complex patterns)   | Low (simple startsWith)    |
-| File Path Type Option    | `Wildcard file path`      | `Prefix`                   |
-| Example                  | `sales_*.csv`             | `sales_`                   |
-| File Extension Filtering | ✅ Yes                    | 🚫 Only if part of prefix  |
+| Feature                  | Wildcard File Path      | Prefix                    |
+| ------------------------ | ----------------------- | ------------------------- |
+| Matching Style           | Pattern (`*`, `?`)      | StartsWith (plain string) |
+| Flexibility              | High (complex patterns) | Low (simple startsWith)   |
+| File Path Type Option    | `Wildcard file path`    | `Prefix`                  |
+| Example                  | `sales_*.csv`           | `sales_`                  |
+| File Extension Filtering | ✅ Yes                  | 🚫 Only if part of prefix |
 
 ---
 
@@ -169,11 +170,11 @@ report_backup_202401.csv
 summary_202401.csv
 ```
 
-| Desired File Match                 | Prefix Approach        | Wildcard Approach         |
-|-----------------------------------|------------------------|---------------------------|
-| Files starting with `report_`     | ✅ `report_`           | ✅ `report_*.csv`         |
-| Files containing `backup`         | ❌ Not Possible        | ✅ `*backup*.csv`         |
-| All `.csv` files                  | ❌                     | ✅ `*.csv`                |
+| Desired File Match            | Prefix Approach | Wildcard Approach |
+| ----------------------------- | --------------- | ----------------- |
+| Files starting with `report_` | ✅ `report_`    | ✅ `report_*.csv` |
+| Files containing `backup`     | ❌ Not Possible | ✅ `*backup*.csv` |
+| All `.csv` files              | ❌              | ✅ `*.csv`        |
 
 ---
 
@@ -274,12 +275,12 @@ Copying **100 CSV files** from Azure Blob Storage:
 
 ## ✅ When to Adjust It
 
-| Scenario                              | Suggested Action                        |
-|---------------------------------------|------------------------------------------|
-| Speed up large file transfers         | 🔼 Increase concurrent connections       |
-| Source/destination system is limited  | 🔽 Lower to avoid overload or throttling |
-| Lots of small files or partitions     | 🔼 Increase for parallelism              |
-| Using APIs with strict rate limits    | 🔽 Lower to prevent throttling           |
+| Scenario                             | Suggested Action                         |
+| ------------------------------------ | ---------------------------------------- |
+| Speed up large file transfers        | 🔼 Increase concurrent connections       |
+| Source/destination system is limited | 🔽 Lower to avoid overload or throttling |
+| Lots of small files or partitions    | 🔼 Increase for parallelism              |
+| Using APIs with strict rate limits   | 🔽 Lower to prevent throttling           |
 
 ---
 
@@ -310,3 +311,256 @@ ADF will then copy up to 8 blobs at once, speeding up large file transfers throu
 <br>
 <br>
 
+# 🖊️ Write Behavior in Azure Data Factory (ADF)
+
+The **Write Behavior** setting in **Azure Data Factory (ADF)** defines how data is written to the **sink** (destination) in activities like **Copy Data**. Different modes offer flexibility for handling insert-only, update, and complex logic scenarios.
+
+---
+
+## 🔹 1. Insert
+
+> Simply inserts new rows into the sink table or destination.
+
+✅ **Use when:**
+
+- You're adding **fresh data**
+- No possibility of duplicate records
+
+❌ **Does not** check for existing records.
+
+🛠️ **Common Use Cases:**
+
+- Loading logs
+- Appending historical records
+
+🧠 **Think of it as:**
+
+```sql
+INSERT INTO table (col1, col2) VALUES (...)
+```
+
+---
+
+## 🔹 2. Upsert
+
+> Insert new rows or update existing ones based on a key match.
+
+✅ **Use when:**
+
+- Syncing data where some records **may already exist**
+- You want to **update existing** or **insert new** records
+
+🔑 **Requirements:**
+
+- A **key column** for matching (e.g., `id`, `customer_id`)
+- ADF must support upsert for the chosen sink (e.g., Azure SQL, Synapse)
+
+🧠 **Think of it as:**
+
+```sql
+IF EXISTS (SELECT * FROM table WHERE id = @id)
+  UPDATE table SET ...
+ELSE
+  INSERT INTO table ...
+```
+
+---
+
+## 🔹 3. Stored Procedure
+
+> Executes a custom **stored procedure** in the sink system.
+
+✅ **Use when:**
+
+- You need **custom logic** for insert/update
+- Using **Azure SQL**, **SQL Server**, or other SP-supported sinks
+
+🛠️ **Features:**
+
+- Call stored procedures with input parameters
+- Supports **table-valued parameters (TVPs)** for bulk loads
+
+🧠 **Example:**
+
+```sql
+EXEC dbo.InsertSalesData @Region = 'East', @SalesAmount = 1000
+```
+
+---
+
+## 📋 Summary Table
+
+| Write Behavior       | Description                        | Good For                                |
+| -------------------- | ---------------------------------- | --------------------------------------- |
+| **Insert**           | Add new rows only                  | Clean new data, logs                    |
+| **Upsert**           | Insert or update if match is found | Data sync, merge scenarios              |
+| **Stored Procedure** | Call SQL proc with logic           | Complex validation, logging, pre-checks |
+
+---
+
+## ⚠️ Notes
+
+- **Not all sinks** support every write behavior:
+
+  | Sink Type    | Supported Behaviors              |
+  | ------------ | -------------------------------- |
+  | Blob Storage | Insert only                      |
+  | Azure SQL DB | Insert, Upsert, Stored Procedure |
+
+- In **Mapping Data Flows**, similar logic is controlled via the **Alter Row** transformation.
+
+---
+
+<br>
+<br>
+<br>
+
+# 🔒 Bulk Insert Table Lock in Azure Data Factory (ADF)
+
+When performing **Bulk Insert** into SQL-based sinks like **Azure SQL Database**, **SQL Server**, or **Synapse SQL**, ADF provides an option to enable or disable **Table Locking**.
+
+---
+
+## 🔹 What Does It Do?
+
+Controls whether ADF will **lock the entire target table** during the bulk insert process.
+
+---
+
+## ✅ Yes — Enable Table Lock
+
+- ADF places a **table-level lock** on the destination.
+- Best for **high-throughput, fast inserts** when the table is not being accessed concurrently.
+
+### ⚙️ Benefits:
+
+- 🔼 **Improved performance** for large data loads
+
+### ⚠️ Trade-Offs:
+
+- ❌ **Blocks other transactions** from reading or writing to the table until the load completes
+
+🧠 Equivalent SQL:
+
+```sql
+BULK INSERT WITH (TABLOCK)
+```
+
+---
+
+## ❌ No — Do Not Lock Table
+
+- Rows are inserted without locking the entire table.
+
+### ⚙️ Benefits:
+
+- ✅ **Non-blocking** — other users/apps can access the table during load
+
+### ⚠️ Trade-Offs:
+
+- 🔽 **Slightly slower** performance for large datasets
+
+🧠 Equivalent SQL:
+
+```sql
+BULK INSERT without TABLOCK
+```
+
+---
+
+## 🧾 Summary Table
+
+| Option  | Locks Table? | Performance | Best Used When...                        |
+| ------- | ------------ | ----------- | ---------------------------------------- |
+| **Yes** | ✅ Yes       | 🔼 Faster   | Nightly ETL, staging loads, isolated ops |
+| **No**  | ❌ No        | 🔽 Slower   | Live systems, during business hours      |
+
+---
+
+## 💡 Best Practices
+
+- Use **Yes (Enable Table Lock)** when:
+
+  - Performing **large batch loads**
+  - No concurrent reads/writes expected
+
+- Use **No (Disable Table Lock)** when:
+  - Table is used in **real-time queries**
+  - You need to **minimize impact** on users
+
+---
+
+<br>
+<br>
+<br>
+
+# 🧾 Pre-copy Script in Azure Data Factory (ADF)
+
+The **Pre-copy script** is a powerful feature in **Azure Data Factory (ADF)** that allows you to run **custom SQL commands** before the **Copy Data activity** starts — available only for **SQL-based sinks** like:
+
+- **Azure SQL Database**
+- **SQL Server**
+- **Synapse Analytics**
+
+---
+
+## 🎯 Purpose
+
+Used to **prepare the sink (target)** before new data is loaded.
+
+---
+
+## 🔧 What Can You Do With It?
+
+✅ **Common Use Cases:**
+
+1. **Truncate the target table** before loading:
+
+   ```sql
+   TRUNCATE TABLE sales_staging;
+   ```
+
+2. **Delete specific rows**:
+
+   ```sql
+   DELETE FROM sales_staging WHERE sale_date = '2025-06-13';
+   ```
+
+3. **Drop and recreate temp tables**:
+
+   ```sql
+   DROP TABLE IF EXISTS temp_load;
+   CREATE TABLE temp_load (id INT, name NVARCHAR(50));
+   ```
+
+4. **Disable constraints or indexes** for better performance
+5. **Perform audit logging or data pre-checks**
+
+---
+
+## 💡 Where to Configure
+
+- Go to the **Sink** tab inside your **Copy Data activity**
+- Scroll down to **"Pre-copy script"**
+- Paste your SQL statement
+
+🛠️ ADF will run this **using the sink's linked service** _before any data is written_
+
+---
+
+## ⚠️ Notes
+
+- Must be a **valid SQL statement**
+- Runs **once per activity**, not per row or per batch
+- Only available when the **sink is a database**
+  - ❌ Not applicable for sinks like Blob Storage or ADLS
+
+---
+
+## 🧠 Example Scenario
+
+You load **daily sales data** into a staging table, but need to clear yesterday’s data first:
+
+```sql
+TRUNCATE TABLE staging_sales;
+```

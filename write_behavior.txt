@@ -1,0 +1,95 @@
+Let's break down the **Write behavior** settings in **Azure Data Factory (ADF)** — these are part of the **sink settings** in activities like **Copy Data**, and they control how data is written to the target/destination system.
+
+---
+
+## 🖊️ **Write Behavior Options**
+
+---
+
+### 1. 🔹 **Insert**
+
+> **Simply inserts** new rows into the sink table or target location.
+
+- ✅ Use when:
+
+  - You're **adding fresh data**.
+  - No chance of duplicate rows.
+
+- ❌ Doesn’t check for existing records.
+- Common for:
+
+  - Loading raw logs, transaction records, or historical data.
+
+🧠 Think of it as:
+
+```sql
+INSERT INTO table (col1, col2) VALUES (...)
+```
+
+---
+
+### 2. 🔹 **Upsert**
+
+> **Insert or update** records based on a match condition (usually a key).
+
+- ✅ Use when:
+
+  - You're syncing data that **may already exist**, and you want to **update it if it does**, or **insert it if it doesn’t**.
+
+- Requires:
+
+  - A **key column** to match (like `id`, `customer_id`, etc.)
+  - ADF must support this operation for the sink (Azure SQL, Synapse, etc.)
+
+🧠 Think of it as:
+
+```sql
+IF EXISTS (SELECT * FROM table WHERE id = @id)
+  UPDATE table SET ...
+ELSE
+  INSERT INTO table ...
+```
+
+---
+
+### 3. 🔹 **Stored Procedure**
+
+> Data is written using a **user-defined stored procedure**.
+
+- ✅ Use when:
+
+  - You need **custom business logic** on insert/update (e.g., validation, audit log).
+  - You're targeting **Azure SQL, SQL Server**, or any sink that supports stored procedures.
+
+- You define the procedure and **pass parameters or tables** to it from ADF.
+
+🧠 Example:
+
+```sql
+EXEC dbo.InsertSalesData @Region = 'East', @SalesAmount = 1000
+```
+
+- Also supports **table-valued parameters (TVPs)** for bulk inserts.
+
+---
+
+## 🧾 Summary Table:
+
+| Write Behavior       | Description                        | Good For                                |
+| -------------------- | ---------------------------------- | --------------------------------------- |
+| **Insert**           | Add new rows only                  | Clean new data, logs                    |
+| **Upsert**           | Insert or update if match is found | Data sync, merge scenarios              |
+| **Stored Procedure** | Call SQL proc with logic           | Complex validation, logging, pre-checks |
+
+---
+
+### ⚠️ Notes:
+
+- Not all sinks support all behaviors. For example:
+
+  - Blob storage → Only supports **Insert**
+  - Azure SQL DB → Supports **Insert**, **Upsert**, **Stored Procedure**
+
+- In **Mapping Data Flows**, similar behavior is controlled via **Alter Row transformation**
+
+---
