@@ -1,0 +1,74 @@
+---
+
+## 📦 **Block Size (MB)** in Azure Data Factory
+
+---
+
+### 🔹 **What is it?**
+
+> **Block Size (in MB)** defines the **chunk size** (in megabytes) of data that ADF uses when uploading files to **file-based sinks**, like:
+
+* **Azure Blob Storage**
+* **Azure Data Lake Storage**
+* **File system sinks**
+
+Essentially, it's the **buffer size** per data block during file write operations.
+
+---
+
+### 🧠 Why does it matter?
+
+When ADF uploads a large file to Blob or ADLS, it splits the file into **blocks**, uploads them in parallel, and then commits the file.
+
+* **Smaller blocks** → More blocks → Higher metadata overhead
+* **Larger blocks** → Fewer blocks → More efficient uploads, but higher memory use
+
+---
+
+### 📊 Typical Values:
+
+* **Default**: Varies depending on sink type and file size (often around 4 MB or 8 MB)
+* **Custom Range**: You can specify it manually (e.g., 1–100 MB per block)
+
+---
+
+### 🔧 Use Cases:
+
+| Scenario                              | Recommended Block Size                        |
+| ------------------------------------- | --------------------------------------------- |
+| Small files (<100 MB)                 | 4–8 MB (default is fine)                      |
+| Large files (>500 MB)                 | 16–100 MB (larger block = better performance) |
+| Slow network or limited bandwidth     | Smaller blocks for retry efficiency           |
+| Uploading to Blob/ADLS in large scale | Larger blocks for better throughput           |
+
+---
+
+### ⚠️ Considerations:
+
+* Applies only when writing to **file-based sinks** (not SQL, REST, etc.)
+* Setting it too high may cause **memory issues**
+* Setting it too low increases **overhead and write time**
+
+---
+
+### 📝 Example:
+
+You’re copying a **2 GB file** to Azure Blob. You set:
+
+```text
+Block Size (MB) = 16
+```
+
+→ ADF will upload the file in **2 GB / 16 MB = 128 blocks**
+
+---
+
+### ✅ Summary:
+
+| Setting        | Purpose                              | When to Tune                    |
+| -------------- | ------------------------------------ | ------------------------------- |
+| **Block Size** | Controls chunk size for file uploads | Large files or network tuning   |
+| Higher value   | Better for large file performance    | Use with big data pipelines     |
+| Lower value    | Better for reliability, small files  | Use with limited memory systems |
+
+---

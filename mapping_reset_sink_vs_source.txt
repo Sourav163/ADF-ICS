@@ -1,0 +1,36 @@
+---
+
+## 🧼 What happens when you click **Reset** in Mapping?
+
+* ✅ **Source columns** → get cleared or refreshed
+* ❌ **Sink columns** → stay as they are (unchanged)
+
+---
+
+## 🧠 Why only source is cleared?
+
+Because:
+
+1. **Source schema** is usually auto-detected — ADF can easily refresh it.
+2. **Sink schema** is usually **manually defined** or **linked to a database table**, so:
+
+   * ADF **doesn’t want to mess with it**.
+   * You might have set up **custom expressions** or **data types** there.
+
+---
+
+## 🔒 ADF is being safe.
+
+* It clears the source mapping so you can remap.
+* But it **keeps the sink mapping** to avoid breaking anything important.
+
+---
+
+### ✅ Summary (in plain words):
+
+| Side   | Reset Happens? | Why?                                   |
+| ------ | -------------- | -------------------------------------- |
+| Source | ✅ Yes          | Easy to reload from source again       |
+| Sink   | ❌ No           | May contain custom or important config |
+
+---

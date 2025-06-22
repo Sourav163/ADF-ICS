@@ -1,0 +1,258 @@
+A **common source of confusion** in Azure Data Factory (ADF). Both **Degree of Copy Parallelism** and **Max Concurrent Connections** deal with **parallelism and throughput**, but they apply at **different levels** and **scopes** of data movement.
+
+---
+
+## 🔄 Summary of Key Differences
+
+| Feature                    | **Degree of Copy Parallelism**                                        | **Max Concurrent Connections**                                                |
+| -------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **Scope**                  | **ADF Copy Activity level**                                           | **Linked Service or Source/Sink level**                                       |
+| **Controls**               | How many **parallel threads** ADF uses to copy data **internally**    | How many **simultaneous connections** ADF opens to the source/sink            |
+| **Applies To**             | All sources/sinks that support parallelism                            | Mostly file- and database-based stores                                        |
+| **Configuration Location** | Copy activity → Source tab → Performance settings                     | Dataset → Linked Service (via UI or JSON)                                     |
+| **Use Case**               | Controls how many **partitions, files, or slices** are copied at once | Controls how many **network/database connections** are allowed simultaneously |
+| **Example**                | 10 files → Parallelism = 5 → 5 copied in parallel                     | Connection pool size for SQL = 4                                              |
+
+---
+
+## 🔹 1. **Degree of Copy Parallelism**
+
+### 💡 What It Is:
+
+Specifies the **number of parallel threads ADF uses** to read/write data in the Copy Activity.
+
+### 🛠 Example:
+
+You have 100 files in blob storage and set:
+
+* **Degree of Copy Parallelism = 10**
+* ADF will process up to 10 files **in parallel threads**.
+
+🔍 Applies to:
+
+* File sources like Azure Blob, ADLS, Amazon S3, etc.
+* Partitioned data in databases (e.g., PolyBase with Azure Synapse)
+
+---
+
+## 🔹 2. **Max Concurrent Connections**
+
+### 💡 What It Is:
+
+Limits the **number of concurrent open connections** to a data store (e.g., SQL DB, Blob, etc.) used by ADF during data transfer.
+
+### 🛠 Example:
+
+You set:
+
+* **Max concurrent connections = 4** in your Azure SQL linked service.
+* ADF will open at most **4 connections at a time** to the SQL server during the operation.
+
+🔍 Applies to:
+
+* SQL Server, Azure SQL, Oracle, and other database-based connectors
+* Azure Blob, ADLS Gen2 (in some cases)
+
+---
+
+## 🎯 Key Insight:
+
+> **Max Concurrent Connections** is about **network/database connection limits**.
+> **Degree of Copy Parallelism** is about **how many parts/files are being copied in parallel** in one Copy Activity.
+
+They **work together**, but adjusting them depends on where the bottleneck is:
+
+* **Slow read/write speed?** Increase **degree of parallelism**
+* **Connection timeouts or throttling?** Tune **max concurrent connections**
+
+---
+
+## 🧠 Real-World Analogy:
+
+Imagine you're downloading files:
+
+* **Max Concurrent Connections** = How many **browsers/tabs** you can open at once to start downloads
+* **Degree of Copy Parallelism** = How many **downloads** can actively happen at the same time in each tab
+
+---
+
+
+
+
+---
+
+### 🎯 Imagine You Are Copying 100 Files From One Folder to Another
+
+Now think of two things:
+
+---
+
+### 🔹 **1. Degree of Copy Parallelism** = "How many files you can copy **at the same time**"
+
+* Let’s say you set it to **5**.
+* Then ADF will copy **5 files at once**, then the next 5, and so on.
+* It's like having **5 workers** copying files at the same time.
+
+➡️ **More parallelism = faster copy**, but only if your system can handle it.
+
+---
+
+### 🔹 **2. Max Concurrent Connections** = "How many doors (connections) you can open to talk to the storage/database"
+
+* Let’s say you set it to **4**.
+* Then ADF will use up to **4 connections** to talk to the source or destination.
+* It’s like saying “You can have at most 4 communication lines open with the server.”
+
+➡️ Too many connections can **overload the server** or hit **connection limits**.
+
+---
+
+### ✅ Summary:
+
+| Term                           | Think of it as...             | Controls...                                | Example                                   |
+| ------------------------------ | ----------------------------- | ------------------------------------------ | ----------------------------------------- |
+| **Degree of Copy Parallelism** | How many files copied at once | **How many things ADF copies in parallel** | Set to 5 → 5 files copied at once         |
+| **Max Concurrent Connections** | How many doors to source/sink | **How many connections ADF uses at once**  | Set to 4 → 4 connections to server at max |
+
+---
+
+### 🧠 Simple Analogy:
+
+> You have 100 boxes to move.
+>
+> * **Degree of Copy Parallelism** = how many movers (people) are carrying boxes at once
+> * **Max Concurrent Connections** = how many trucks you’re allowed to load at the same time
+
+Both are important for performance — but they control **different things**.
+
+---
+
+
+
+
+---
+
+### ⚙️ You Set:
+
+* **Degree of Copy Parallelism = 5**
+* **Max Concurrent Connections = 4**
+
+Now, what happens?
+
+---
+
+### 💡 Important Difference:
+
+These **two settings control different layers** of the operation.
+
+---
+
+## ✅ What Happens in This Scenario?
+
+* **ADF will try to copy up to 5 files in parallel** (because of Degree of Copy Parallelism = 5).
+* But it can only **open 4 connections at a time** to the source or sink (because of Max Concurrent Connections = 4).
+
+👉 **So only 4 files will be copied at the same time**, not 5 — because ADF **runs into the connection limit**.
+
+---
+
+## 🔄 In Simple Terms:
+
+> ADF wants to copy 5 files in parallel (based on your `parallelism` setting)
+> But it hits a limit: **only 4 connections** allowed
+> ✅ So it ends up copying **4 files at once**
+> Then, when one finishes, another starts — still keeping the number of connections **within 4**
+
+---
+
+## 📊 Visual Example:
+
+| File # | Will it start immediately?        |
+| ------ | --------------------------------- |
+| File 1 | ✅ Yes (Connection 1)              |
+| File 2 | ✅ Yes (Connection 2)              |
+| File 3 | ✅ Yes (Connection 3)              |
+| File 4 | ✅ Yes (Connection 4)              |
+| File 5 | ⏳ Waits (no connection available) |
+
+➡️ Once File 1 finishes, **File 5 starts using that freed-up connection**.
+
+---
+
+## 🧠 Key Point:
+
+> The **smaller value between these two settings becomes the limit**.
+
+So in your case:
+
+* `Degree of Copy Parallelism = 5`
+* `Max Concurrent Connections = 4`
+  👉 **Only 4 files are copied in parallel**, because **only 4 connections** are allowed.
+
+---
+
+### ✅ Best Practice:
+
+To get full parallelism, **make sure `Max Concurrent Connections ≥ Degree of Copy Parallelism`**.
+
+
+
+
+---
+
+### ⚙️ Settings:
+
+* **Degree of Copy Parallelism = 5**
+* **Max Concurrent Connections = 7**
+
+---
+
+## ✅ What Happens Now?
+
+* ADF is allowed to use **up to 7 simultaneous connections** to your source or sink.
+* But the **Copy Activity will still only run 5 threads in parallel** (because **parallelism = 5**).
+
+So:
+
+> ✅ **ADF will copy 5 files at a time.**
+> 🛑 The extra 2 connections (from the 7 allowed) will remain **unused** — because the activity is **limited to 5 parallel copies**.
+
+---
+
+## 🔁 Visual Flow:
+
+| File # | Started Immediately? | Connection Used |
+| ------ | -------------------- | --------------- |
+| File 1 | ✅ Yes                | Connection 1    |
+| File 2 | ✅ Yes                | Connection 2    |
+| File 3 | ✅ Yes                | Connection 3    |
+| File 4 | ✅ Yes                | Connection 4    |
+| File 5 | ✅ Yes                | Connection 5    |
+| File 6 | ⏳ Waits              | –               |
+| File 7 | ⏳ Waits              | –               |
+
+➡️ As soon as one file finishes, another will start using a **free connection** — keeping the total active threads at **5**.
+
+---
+
+## 🎯 Key Rule:
+
+> The **Degree of Copy Parallelism is the actual engine of parallelism**.
+> The **Max Concurrent Connections is just an upper safety limit**.
+
+### So:
+
+* **You can have more connections than needed** — that’s fine.
+* **But if your `parallelism` is low, not all connections will be used.**
+
+---
+
+## 🔧 Best Practice:
+
+| Scenario                             | What To Do                              |
+| ------------------------------------ | --------------------------------------- |
+| Want to copy more files in parallel  | Increase **Degree of Copy Parallelism** |
+| Getting "Too many connections" error | Reduce **Max Concurrent Connections**   |
+| Want full speed?                     | Set **Max Connections ≥ Parallelism**   |
+
+---

@@ -1,0 +1,79 @@
+In **Azure Data Factory (ADF)**, **Batch Size** and **Concurrent Connections** are both performance tuning options, but they affect data transfer in different ways and operate at different levels.
+
+---
+
+## 🔹 1. **Batch Size**
+
+### 💡 Meaning:
+
+**Batch Size** refers to **the number of records or rows read/written per batch** during a data movement or transformation operation.
+
+* Mainly used in **Copy Activity**.
+* Often relevant when **writing to a sink**, especially **SQL-based stores** (like Azure SQL, Synapse, etc.)
+* Not always available for all source/sink types (depends on connector).
+
+### 🛠 Example:
+
+You set **Batch Size = 5000** while copying to Azure SQL DB:
+
+* ADF will write 5,000 rows at a time in one commit (transaction).
+* This reduces the number of round-trips, improving performance.
+
+### ✅ Use Case:
+
+Improve performance by sending more data per batch rather than row-by-row. Good when:
+
+* Target supports bulk inserts
+* You want fewer network trips
+* You want to avoid overloading the sink
+
+---
+
+## 🔹 2. **Concurrent Connections (Parallel Copy)**
+
+### 💡 Meaning:
+
+**Concurrent Connections** refers to **how many threads or parallel connections ADF can open simultaneously** to read/write data.
+
+* Also called **"Degree of Copy Parallelism"**.
+* Controls **how many files or partitions are processed in parallel.**
+* Relevant for file-based sources like Blob, ADLS, S3, etc.
+
+### 🛠 Example:
+
+You have 100 CSV files in a folder and set **Concurrent Connections = 5**:
+
+* ADF will process 5 files at a time.
+* Once a file is done, it moves to the next one, maintaining a max of 5 concurrent threads.
+
+### ✅ Use Case:
+
+Increase throughput by enabling **parallelism**. Helpful when:
+
+* Source folder has many files
+* Source/sink supports parallel reads/writes
+* You want faster processing
+
+---
+
+## 🔄 Comparison Table:
+
+| Feature               | Batch Size                | Concurrent Connections              |
+| --------------------- | ------------------------- | ----------------------------------- |
+| **Focus Area**        | Number of rows per batch  | Number of parallel threads/files    |
+| **Applies To**        | Mostly databases          | Mostly file-based stores            |
+| **Improves**          | Insert/update efficiency  | Parallelism and throughput          |
+| **Unit**              | Row count                 | Thread count                        |
+| **Controlled Where?** | Sink settings (e.g., SQL) | Source settings (e.g., Blob folder) |
+| **Example**           | 10,000 rows per batch     | 10 files processed simultaneously   |
+
+---
+
+## 🎯 Quick Analogy:
+
+> Imagine you’re uploading data:
+
+* **Batch size** = How many items you put in a single box.
+* **Concurrent connections** = How many delivery trucks you send at once.
+
+---

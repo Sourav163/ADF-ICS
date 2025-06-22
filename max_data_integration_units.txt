@@ -1,0 +1,67 @@
+---
+
+## ⚙️ **Maximum Data Integration Unit (DIU)**
+
+---
+
+### 🔹 **What is a Data Integration Unit (DIU)?**
+
+A **Data Integration Unit (DIU)** is the **unit of compute power** used by Azure Data Factory’s **Azure Integration Runtime** during **Copy Data** or **Data Flow** activities.
+
+Think of 1 DIU as a mix of:
+
+* **CPU**
+* **Memory**
+* **Throughput/network capacity**
+
+More DIUs = More power = Faster execution (up to a point)
+
+---
+
+### 🔺 **Maximum DIU Setting:**
+
+This setting allows you to **limit the maximum amount of compute resources** ADF is allowed to use for that activity.
+
+* You set a number (e.g., 4, 8, 16)
+* ADF uses **auto-scaling**, starting from a baseline, up to the **maximum**
+
+---
+
+### 📌 Where is it used?
+
+* **Copy Data Activity** → under "Performance settings"
+* Applies when using **Azure Integration Runtime**
+* Not relevant for **Self-hosted IR**
+
+---
+
+### 🧠 Why Set It?
+
+| Use Case                        | Benefit                                                  |
+| ------------------------------- | -------------------------------------------------------- |
+| **Large data volumes**          | Increase max DIUs (e.g., 16 or 32) for faster throughput |
+| **Small/cheap jobs**            | Limit max DIUs (e.g., 2–4) to **reduce cost**            |
+| **Network-intensive jobs**      | Tune DIUs to optimize network bandwidth usage            |
+| **Multi-pipeline environments** | Prevent one job from using up all compute                |
+
+---
+
+### 📊 Example:
+
+Let’s say you're copying 200 GB of data from Blob to Azure SQL.
+
+* **Max DIU = 2** → slower copy, cheaper
+* **Max DIU = 16** → faster copy, more cost
+* ADF auto-scales **up to that max** depending on load
+
+---
+
+### 📝 Summary:
+
+| Setting          | Description                                            |
+| ---------------- | ------------------------------------------------------ |
+| **Maximum DIU**  | Upper limit of compute resources ADF can auto-scale to |
+| **Higher value** | Faster performance, higher cost                        |
+| **Lower value**  | Cost-efficient, slower                                 |
+
+---

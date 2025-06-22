@@ -564,3 +564,1335 @@ You load **daily sales data** into a staging table, but need to clear yesterday�
 ```sql
 TRUNCATE TABLE staging_sales;
 ```
+
+<br>
+<br>
+<br>
+
+# ⚙️ Batch Size vs Concurrent Connections in Azure Data Factory (ADF)
+
+In **Azure Data Factory (ADF)**, both **Batch Size** and **Concurrent Connections** are important for **performance tuning**, but they control **different aspects** of the data movement process.
+
+---
+
+## 🔹 1. Batch Size
+
+### 💡 What It Means
+
+**Batch Size** defines the **number of rows** read or written per batch during a data transfer.
+
+- Commonly used in **Copy Data activities**
+- Most effective when writing to **SQL-based sinks** like:
+  - Azure SQL Database
+  - Synapse Analytics
+- Not all connectors support this option
+
+### 🛠 Example
+
+```txt
+Batch Size = 5000
+```
+
+- ADF writes 5,000 records in one go (single transaction)
+- Reduces round-trips, improving performance
+
+### ✅ Best For
+
+- Reducing commit frequency
+- Improving performance during **bulk loads**
+- Avoiding row-by-row insert overhead
+
+---
+
+## 🔹 2. Concurrent Connections (Parallel Copy)
+
+### 💡 What It Means
+
+**Concurrent Connections** defines **how many threads** ADF opens in parallel during the copy process.
+
+- Also known as **"Degree of Copy Parallelism"**
+- Works best for **file-based sources**:
+  - Blob Storage
+  - ADLS
+  - Amazon S3
+
+### 🛠 Example
+
+```txt
+Concurrent Connections = 5
+```
+
+- ADF processes **5 files at a time**
+- As one finishes, the next is picked, maintaining max concurrency
+
+### ✅ Best For
+
+- Copying large numbers of files
+- Leveraging multi-threaded performance
+- Accelerating file ingestion pipelines
+
+---
+
+## 🔄 Comparison Table
+
+| Feature               | Batch Size                | Concurrent Connections              |
+| --------------------- | ------------------------- | ----------------------------------- |
+| **Focus Area**        | Number of rows per batch  | Number of parallel threads/files    |
+| **Applies To**        | Mostly databases          | Mostly file-based stores            |
+| **Improves**          | Insert/update efficiency  | Parallelism and throughput          |
+| **Unit**              | Row count                 | Thread count                        |
+| **Controlled Where?** | Sink settings (e.g., SQL) | Source settings (e.g., Blob folder) |
+| **Example**           | 10,000 rows per batch     | 10 files processed simultaneously   |
+
+---
+
+## 🎯 Quick Analogy
+
+> Imagine you're uploading data to a warehouse:
+
+- **Batch Size** = How many boxes you pack into each truck
+- **Concurrent Connections** = How many delivery trucks leave at the same time
+
+---
+
+<br>
+<br>
+<br>
+
+# 📉 Disable Performance Metrics Analytics in Azure Data Factory (ADF)
+
+This setting allows you to control whether **detailed performance metrics** are collected during execution of a **Copy Data activity** in ADF.
+
+---
+
+## 🔹 What Is It?
+
+A checkbox in the **Copy Data activity** that toggles **metrics collection** for that specific operation.
+
+---
+
+## 🧠 When Enabled (Default)
+
+ADF will collect and log:
+
+- ✅ Rows read/written
+- ✅ Throughput (rows/sec, MB/sec)
+- ✅ Source/sink operation duration
+- ✅ Partition statistics
+
+📍 Metrics appear in:
+
+- **Monitoring tab**
+- **Activity output JSON**
+- **Azure Monitoring Logs** (if configured)
+
+---
+
+## ❌ When Disabled
+
+If you check **"Disable Performance Metrics Analytics"**:
+
+- ADF skips collecting detailed metrics
+- Logs show only **basic status** (e.g., success/failure, timestamps)
+
+---
+
+## ✅ When to Disable
+
+| Scenario                           | Reason                                                            |
+| ---------------------------------- | ----------------------------------------------------------------- |
+| High-throughput, large-volume copy | Improve performance by reducing logging overhead                  |
+| Sensitive environments             | Avoid logging row counts or schema details for compliance reasons |
+| Minimal testing or troubleshooting | Keep logs simple and avoid noisy output                           |
+
+---
+
+## ⚠️ Important Notes
+
+- You **won’t see row counts, size, partitions, or throughput** when disabled
+- ✅ This setting **does not affect the actual data copy**, only the **metrics logging**
+- Applies **only to the individual activity**, not the whole pipeline
+
+---
+
+## 🔁 Summary Table
+
+| Option                   | Metrics Collected?   | Use When                                     |
+| ------------------------ | -------------------- | -------------------------------------------- |
+| ❌ **Disabled**          | No (basic logs only) | Optimize performance, reduce logging         |
+| ✅ **Enabled** (default) | Yes (detailed logs)  | For monitoring, auditing, performance tuning |
+
+---
+
+<br>
+<br>
+<br>
+
+---
+
+# ⚙️ Type Conversion Settings in Azure Data Factory (ADF)
+
+These settings ensure **data integrity** and proper **schema mapping** between **source and sink** in **Copy Data activities**.
+
+---
+
+## 🔹 Allow Data Truncation
+
+- ✅ When enabled: ADF will **truncate data** that exceeds the destination column size
+- ❌ When disabled (default): Copy **fails** if data exceeds the sink column width
+
+📌 Example:
+
+```sql
+Source: VARCHAR(200) → Sink: VARCHAR(50)
+```
+
+- With truncation: Data is cut to 50 characters
+- Without truncation: Activity fails
+
+---
+
+## 🔹 Treat Boolean as Number
+
+- ✅ When enabled: Converts `true/false` → `1/0`
+- ❌ When disabled: May cause failure if sink expects a number
+
+📌 Example:
+
+```sql
+Source: true → Sink expects INT → Result: 1
+```
+
+---
+
+## 🔹 Date Format
+
+Helps parse string-formatted **dates** from the source.
+
+📌 Example:
+
+```txt
+"13-06-2025" → Format: dd-MM-yyyy
+```
+
+---
+
+## 🔹 DateTime Format
+
+Parses **datetime strings** including time components.
+
+📌 Example:
+
+```txt
+"2025-06-13 15:30:00" → Format: yyyy-MM-dd HH:mm:ss
+```
+
+---
+
+## 🔹 DateTimeOffset Format
+
+Use for datetime values with **timezone offset**.
+
+📌 Example:
+
+```txt
+"2025-06-13T10:30:00+05:30" → Format: yyyy-MM-ddTHH:mm:sszzz
+```
+
+---
+
+## 🔹 TimeSpan Format
+
+Defines format for **duration values** (e.g., hours, minutes).
+
+📌 Example:
+
+```txt
+"02:30:00" → Format: hh\:mm\:ss
+```
+
+---
+
+## 🔹 Time Format
+
+Used for **time-only fields**.
+
+📌 Example:
+
+```txt
+"03:45 PM" → Format: hh:mm tt
+"15:45" → Format: HH:mm
+```
+
+---
+
+## 🌍 Culture
+
+Controls **locale-specific formatting** for dates and numbers.
+
+📌 Examples:
+
+- `en-US` → MM/dd/yyyy, `1,000.50`
+- `fr-FR` → dd/MM/yyyy, `1 000,50`
+
+✅ Helps with:
+
+- Correct parsing of date/time
+- Proper decimal/thousand separator handling
+
+---
+
+## 🔁 Summary Table
+
+| Setting                 | Purpose                             | Example Format           |
+| ----------------------- | ----------------------------------- | ------------------------ |
+| Allow Data Truncation   | Trim oversize data or fail          | Yes / No                 |
+| Treat Boolean as Number | Convert true/false → 1/0            | Yes / No                 |
+| Date Format             | Parse string as date                | `dd-MM-yyyy`             |
+| DateTime Format         | Parse string as datetime            | `yyyy-MM-dd HH:mm:ss`    |
+| DateTimeOffset Format   | Parse string with timezone          | `yyyy-MM-ddTHH:mm:sszzz` |
+| TimeSpan Format         | Handle durations                    | `hh\:mm\:ss`             |
+| Time Format             | Parse time-only values              | `HH:mm`, `hh:mm tt`      |
+| Culture                 | Controls number/date parsing locale | `en-US`, `fr-FR`         |
+
+---
+
+<br>
+<br>
+<br>
+
+# ⏱️ TimeSpan vs Time Format in Azure Data Factory (ADF)
+
+In ADF, understanding the difference between **TimeSpan** and **Time Format** is crucial for parsing time-related data accurately. These formats are based on the **.NET DateTime formatting system**.
+
+---
+
+## 🔹 1. TimeSpan Format (`hh\:mm\:ss`)
+
+Used when dealing with **durations** (e.g., time intervals).
+
+### ✅ Example
+
+- **Source Value**: `"02:30:00"`
+- **Format String**: `hh\:mm\:ss`
+
+### 🧠 Why the backslash (`\:`)?
+
+In **.NET**, colons (`:`) are format specifiers. To include an actual colon as a literal, you must **escape it** using a backslash (`\:`).
+
+### 🔍 Breakdown
+
+- `hh` → Hours
+- `mm` → Minutes
+- `ss` → Seconds
+- `\:` → Literal colon
+
+✔ Without escaping, `.NET` misinterprets the colon and the format may fail.
+
+---
+
+## 🔹 2. Time Format (`hh:mm tt`)
+
+Used for **clock times** (e.g., timestamps like `03:45 PM`).
+
+### ✅ Example
+
+- **Source Value**: `"03:45 PM"`
+- **Format String**: `hh:mm tt`
+
+### 🧠 Why no backslash?
+
+In **DateTime** formats, colons (`:`) are treated as **literal characters by default** — no need to escape them.
+
+### 🔍 Breakdown
+
+- `hh` → Hour (12-hour format)
+- `mm` → Minutes
+- `tt` → AM/PM designator
+- `:` → Literal colon is directly recognized
+
+---
+
+## 🔁 Summary Table
+
+| Format Type  | Example Input | Format String | Colon Escaped? | Reason                                               |
+| ------------ | ------------- | ------------- | -------------- | ---------------------------------------------------- |
+| **TimeSpan** | `"02:30:00"`  | `hh\:mm\:ss`  | ✅ Yes         | .NET treats `:` as special in TimeSpan formats       |
+| **Time**     | `"03:45 PM"`  | `hh:mm tt`    | ❌ No          | `:` is literal by default in DateTime format strings |
+
+---
+
+## 🧠 Final Tip
+
+- ✅ Use `\:` when formatting **durations** (TimeSpan)
+- 🚫 Don’t use `\:` for **clock time** (DateTime)
+
+<br>
+<br>
+<br>
+
+# 🔁 ADF Mapping Reset — Why Only Source Is Cleared?
+
+In **Azure Data Factory (ADF)**, when you click the **"Reset"** button in the **Mapping** section of a **Copy Data activity**, here's what happens:
+
+---
+
+## 🔹 What Gets Cleared?
+
+| Side      | Reset Happens? | Reason                                            |
+| --------- | -------------- | ------------------------------------------------- |
+| ✅ Source | Yes            | ADF can easily reload source schema automatically |
+| ❌ Sink   | No             | Sink may contain custom settings or manual schema |
+
+---
+
+## 🧠 Why Only the Source?
+
+1. **Source columns** are often **auto-detected**, so ADF can safely refresh them.
+2. **Sink columns** are usually:
+   - **Manually defined**
+   - Or linked to a **database/table**
+   - May include **custom expressions or data types**
+
+Resetting the sink could accidentally remove these settings — so ADF avoids touching it.
+
+---
+
+## 🔒 ADF Plays It Safe
+
+- ✅ Clears source mapping to allow fresh remapping
+- 🚫 Keeps sink schema to avoid breaking your logic
+
+---
+
+## ✅ In Summary
+
+| Action                   | Affects Source? | Affects Sink? | Why?                                           |
+| ------------------------ | --------------- | ------------- | ---------------------------------------------- |
+| 🔄 Click "Reset Mapping" | ✅ Yes          | ❌ No         | Refreshes source mapping, keeps sink unchanged |
+
+---
+
+<br>
+<br>
+<br>
+
+# ⚙️ Maximum Data Integration Units (DIU) in Azure Data Factory (ADF)
+
+The **Maximum DIU** setting in ADF controls how much **compute power** the **Azure Integration Runtime** can use during a **Copy Data** or **Data Flow** activity.
+
+---
+
+## 🔹 What is a Data Integration Unit (DIU)?
+
+A **DIU** is a unit of computing power made up of:
+
+- 🧠 **CPU**
+- 🧮 **Memory**
+- 🌐 **Network throughput**
+
+> More DIUs = More power = Faster execution (up to a limit)
+
+---
+
+## 🔺 What Does “Maximum DIU” Do?
+
+- Sets an **upper limit** for how many DIUs ADF can scale up to during execution
+- ADF starts with a baseline and **auto-scales** up to the **maximum DIU** you define
+
+---
+
+## 📍 Where Can You Set It?
+
+- In the **Copy Data Activity**, under **Performance settings**
+- Applies **only** when using **Azure Integration Runtime**
+- ❌ Not applicable for **Self-hosted Integration Runtime**
+
+---
+
+## 🧠 Why Set a Max DIU?
+
+| Scenario                        | Why Set It                                  |
+| ------------------------------- | ------------------------------------------- |
+| **Large data volumes**          | 🚀 Increase max DIUs for faster performance |
+| **Cost control for small jobs** | 💰 Set low DIUs to save on cost             |
+| **Heavy network jobs**          | 🌐 Balance network throughput               |
+| **Busy environments**           | ⚖️ Prevent one job from hogging resources   |
+
+---
+
+## 📊 Example
+
+You're copying 200 GB from Blob Storage to Azure SQL DB:
+
+- `Max DIU = 2` → Slower transfer, lower cost
+- `Max DIU = 16` → Faster transfer, higher cost
+- ADF automatically scales **up to** the max, based on workload
+
+---
+
+## 📝 Summary
+
+| Setting         | Description                               |
+| --------------- | ----------------------------------------- |
+| **Maximum DIU** | Max compute ADF can use for that activity |
+| High Value      | ⚡ Faster copy but higher cost            |
+| Low Value       | 🐢 Slower copy but cheaper                |
+
+---
+
+<br>
+<br>
+<br>
+
+# 🔀 Degree of Copy Parallelism in Azure Data Factory (ADF)
+
+The **Degree of Copy Parallelism** setting controls how many **partitions, files, or objects** ADF copies **at the same time** during a **Copy Data activity**.
+
+---
+
+## 🔹 What Does It Mean?
+
+> "How many chunks of data can ADF copy **in parallel**?"
+
+This helps speed up data movement when working with:
+
+- 🗂️ Multiple files (e.g., from Blob, ADLS)
+- 🧩 Partitioned datasets
+- 📊 Multiple tables (e.g., SQL databases)
+
+---
+
+## ⚙️ How It Works
+
+ADF splits the source into **chunks or partitions** behind the scenes.  
+**Degree of Copy Parallelism** tells ADF **how many to copy at once**.
+
+### ✅ Example:
+
+- You have 20 CSV files in Azure Blob
+- `Degree of Parallelism = 5`
+- ADF copies 5 files at the same time → when done, it picks the next 5, and so on
+
+---
+
+## 🎯 When Should You Adjust It?
+
+| Situation                                     | What to Do            |
+| --------------------------------------------- | --------------------- |
+| High-concurrency source (e.g., Blob, Synapse) | 🔼 Increase value     |
+| Source/destination is slow or rate-limited    | 🔽 Lower value        |
+| Copying many small files                      | 🔼 Increase for speed |
+| Seeing throttling/errors in pipeline          | 🔽 Lower to stabilize |
+
+---
+
+## 📍 Where to Set It?
+
+- Go to **Copy Activity → Source tab → Additional Settings**
+- Field: `Degree of copy parallelism`
+- Default: Typically `4` or **auto**
+
+---
+
+## ⚠️ Important Notes
+
+- Setting it too high might cause:
+
+  - ❌ Source system overload
+  - ❌ Throttling
+  - ❌ Failures in pipeline
+
+- Can be fine-tuned alongside:
+  - **Max Concurrent Connections**
+  - **Max DIUs (for compute scaling)**
+
+---
+
+## 🧾 Summary Table
+
+| Setting                    | What It Controls                          |
+| -------------------------- | ----------------------------------------- |
+| Degree of Copy Parallelism | Number of files/partitions copied at once |
+| Higher value               | ⚡ Faster, more resource-intensive        |
+| Lower value                | 🐢 Slower, but safer for fragile systems  |
+
+---
+
+<br>
+<br>
+<br>
+
+# 🔄 Degree of Copy Parallelism vs Max Concurrent Connections in Azure Data Factory (ADF)
+
+A **common source of confusion** in ADF. Both settings deal with **parallelism and throughput**, but they control **different layers** of how data is transferred.
+
+---
+
+## 🧩 Key Differences Summary
+
+| Feature                    | **Degree of Copy Parallelism**                                  | **Max Concurrent Connections**                                      |
+| -------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **Scope**                  | ADF Copy Activity level                                         | Linked Service or Source/Sink level                                 |
+| **Controls**               | Number of **parallel threads** ADF uses to copy data internally | Number of **simultaneous connections** ADF opens to the source/sink |
+| **Applies To**             | All sources/sinks that support partitioning or file-based input | Mostly file-based and database connectors                           |
+| **Configuration Location** | Copy Activity → Source tab → Performance settings               | Dataset → Linked Service (via UI or JSON)                           |
+| **Use Case**               | Copying **partitions, files, or slices** in parallel            | Managing **network/database connection pooling**                    |
+| **Example**                | 10 files, Parallelism = 5 → 5 copied simultaneously             | SQL pool connection limit = 4                                       |
+
+---
+
+<br>
+
+## 🔹 1. Degree of Copy Parallelism
+
+### 💡 What Is It?
+
+Defines how many **parallel threads** ADF can use to process files, partitions, or chunks in a **single Copy Activity**.
+
+### 🛠 Example
+
+You have 100 files to copy from Azure Blob Storage.
+
+```text
+Degree of Copy Parallelism = 10
+→ ADF copies 10 files at a time (in parallel threads)
+```
+
+### 🔍 Applies To:
+
+- Azure Blob, ADLS, Amazon S3
+- Partitioned data (e.g., PolyBase reads in Synapse)
+
+---
+
+## 🔹 2. Max Concurrent Connections
+
+### 💡 What Is It?
+
+Limits how many **simultaneous network/database connections** ADF opens to a source or sink system.
+
+### 🛠 Example
+
+You copy data into Azure SQL Database:
+
+```text
+Max Concurrent Connections = 4
+→ ADF opens a maximum of 4 SQL connections at once
+```
+
+### 🔍 Applies To:
+
+- Azure SQL, SQL Server, Oracle
+- File systems (e.g., Blob, ADLS)
+
+---
+
+## 🎯 Key Insight
+
+> **Max Concurrent Connections** = Controls **network or database connections** > **Degree of Copy Parallelism** = Controls **how many parts/files are copied at once**
+
+They **can work together**, and tuning both helps improve performance:
+
+| Problem                      | Setting to Adjust                     |
+| ---------------------------- | ------------------------------------- |
+| Slow reads/writes            | 🔼 Increase **Degree of Parallelism** |
+| Connection errors/throttling | 🔽 Decrease **Max Connections**       |
+
+---
+
+## 🧠 Real-World Analogy
+
+> Imagine you're downloading files:
+
+- **Max Concurrent Connections** = How many **browser tabs** you can open at once
+- **Degree of Copy Parallelism** = How many **downloads** are happening at once per tab
+
+---
+
+<br>
+<br>
+<br>
+
+# 🎯 Imagine You Are Copying 100 Files From One Folder to Another
+
+Now think of two things:
+
+---
+
+### 🔹 **1. Degree of Copy Parallelism** = "How many files you can copy **at the same time**"
+
+- Let’s say you set it to **5**.
+- Then ADF will copy **5 files at once**, then the next 5, and so on.
+- It's like having **5 workers** copying files at the same time.
+
+➡️ **More parallelism = faster copy**, but only if your system can handle it.
+
+---
+
+### 🔹 **2. Max Concurrent Connections** = "How many doors (connections) you can open to talk to the storage/database"
+
+- Let’s say you set it to **4**.
+- Then ADF will use up to **4 connections** to talk to the source or destination.
+- It’s like saying “You can have at most 4 communication lines open with the server.”
+
+➡️ Too many connections can **overload the server** or hit **connection limits**.
+
+---
+
+## ✅ Summary:
+
+| Term                           | Think of it as...             | Controls...                                | Example                                   |
+| ------------------------------ | ----------------------------- | ------------------------------------------ | ----------------------------------------- |
+| **Degree of Copy Parallelism** | How many files copied at once | **How many things ADF copies in parallel** | Set to 5 → 5 files copied at once         |
+| **Max Concurrent Connections** | How many doors to source/sink | **How many connections ADF uses at once**  | Set to 4 → 4 connections to server at max |
+
+---
+
+<br>
+
+## 🧠 Simple Analogy:
+
+> You have 100 boxes to move.
+>
+> - **Degree of Copy Parallelism** = how many movers (people) are carrying boxes at once
+> - **Max Concurrent Connections** = how many trucks you’re allowed to load at the same time
+
+Both are important for performance — but they control **different things**.
+
+<br>
+
+# ⚙️ You Set:
+
+- **Degree of Copy Parallelism = 5**
+- **Max Concurrent Connections = 4**
+
+Now, what happens?
+
+---
+
+## 💡 Important Difference:
+
+These **two settings control different layers** of the operation.
+
+---
+
+## ✅ What Happens in This Scenario?
+
+- **ADF will try to copy up to 5 files in parallel** (because of Degree of Copy Parallelism = 5).
+- But it can only **open 4 connections at a time** to the source or sink (because of Max Concurrent Connections = 4).
+
+👉 **So only 4 files will be copied at the same time**, not 5 — because ADF **runs into the connection limit**.
+
+---
+
+## 🔄 In Simple Terms:
+
+> ADF wants to copy 5 files in parallel (based on your `parallelism` setting)
+> But it hits a limit: **only 4 connections** allowed
+> ✅ So it ends up copying **4 files at once**
+> Then, when one finishes, another starts — still keeping the number of connections **within 4**
+
+---
+
+## 📊 Visual Example:
+
+| File # | Will it start immediately?         |
+| ------ | ---------------------------------- |
+| File 1 | ✅ Yes (Connection 1)              |
+| File 2 | ✅ Yes (Connection 2)              |
+| File 3 | ✅ Yes (Connection 3)              |
+| File 4 | ✅ Yes (Connection 4)              |
+| File 5 | ⏳ Waits (no connection available) |
+
+➡️ Once File 1 finishes, **File 5 starts using that freed-up connection**.
+
+---
+
+## 🧠 Key Point:
+
+> The **smaller value between these two settings becomes the limit**.
+
+So in your case:
+
+- `Degree of Copy Parallelism = 5`
+- `Max Concurrent Connections = 4`
+  👉 **Only 4 files are copied in parallel**, because **only 4 connections** are allowed.
+
+---
+
+## ✅ Best Practice:
+
+To get full parallelism, **make sure `Max Concurrent Connections ≥ Degree of Copy Parallelism`**.
+
+<br>
+
+# ⚙️ Settings:
+
+- **Degree of Copy Parallelism = 5**
+- **Max Concurrent Connections = 7**
+
+---
+
+## ✅ What Happens Now?
+
+- ADF is allowed to use **up to 7 simultaneous connections** to your source or sink.
+- But the **Copy Activity will still only run 5 threads in parallel** (because **parallelism = 5**).
+
+So:
+
+> ✅ **ADF will copy 5 files at a time.**
+> 🛑 The extra 2 connections (from the 7 allowed) will remain **unused** — because the activity is **limited to 5 parallel copies**.
+
+---
+
+## 🔁 Visual Flow:
+
+| File # | Started Immediately? | Connection Used |
+| ------ | -------------------- | --------------- |
+| File 1 | ✅ Yes               | Connection 1    |
+| File 2 | ✅ Yes               | Connection 2    |
+| File 3 | ✅ Yes               | Connection 3    |
+| File 4 | ✅ Yes               | Connection 4    |
+| File 5 | ✅ Yes               | Connection 5    |
+| File 6 | ⏳ Waits             | –               |
+| File 7 | ⏳ Waits             | –               |
+
+➡️ As soon as one file finishes, another will start using a **free connection** — keeping the total active threads at **5**.
+
+---
+
+## 🎯 Key Rule:
+
+> The **Degree of Copy Parallelism is the actual engine of parallelism**.
+> The **Max Concurrent Connections is just an upper safety limit**.
+
+### So:
+
+- **You can have more connections than needed** — that’s fine.
+- **But if your `parallelism` is low, not all connections will be used.**
+
+---
+
+## 🔧 Best Practice:
+
+| Scenario                             | What To Do                              |
+| ------------------------------------ | --------------------------------------- |
+| Want to copy more files in parallel  | Increase **Degree of Copy Parallelism** |
+| Getting "Too many connections" error | Reduce **Max Concurrent Connections**   |
+| Want full speed?                     | Set **Max Connections ≥ Parallelism**   |
+
+---
+
+<br>
+<br>
+<br>
+
+# ✅ Data Consistency Verification in Azure Data Factory (ADF)
+
+Ensure that **what you read from the source** matches exactly **what gets written to the sink** — that’s what **Data Consistency Verification** is all about.
+
+---
+
+## 🔹 What Is It?
+
+> This setting enables ADF to perform **automatic checks** to validate data integrity — by comparing **row counts** and/or **checksum values**.
+
+### 💬 In simple terms:
+
+> "Did I copy all the data correctly?"
+
+---
+
+## 🔍 Types of Verifications
+
+When enabled, ADF may apply:
+
+1. **✔️ Row Count Comparison**
+
+   - Compares number of rows read vs written
+
+2. **✔️ Checksum Validation** _(for supported connectors)_
+   - Compares hash values of the content to ensure no corruption
+
+---
+
+## ⚙️ Where to Enable It?
+
+- Inside **Copy Data Activity → Sink Tab → Additional Settings**
+- Check the box: **"Enable data consistency verification"**
+
+---
+
+## 🧠 When Should You Use It?
+
+| Scenario                                   | Why Enable It?                     |
+| ------------------------------------------ | ---------------------------------- |
+| Copying financial or mission-critical data | Detect data loss or corruption     |
+| Working with unreliable or slow systems    | Prevent partial or silent failures |
+| Regulatory or auditing environments        | Prove end-to-end data integrity    |
+
+---
+
+## ⚠️ Important Notes
+
+- 🕒 **Slight performance overhead** (varies by dataset size):
+
+  - ✅ Row count checks → Light
+  - 🔁 Checksum → Medium/Heavy (if supported)
+
+- ❗ Works **only with compatible connectors** (e.g., Blob → SQL)
+
+- ❌ If mismatch is found → ADF **fails the Copy Activity** with an error
+
+---
+
+## 🧾 Example
+
+You're copying 10 million rows from Azure Data Lake to Azure SQL Database.
+
+- ✅ **With verification ON**: ADF confirms all 10M rows are written
+- ❌ If only 9,999,000 rows are written → ADF throws a **mismatch error**
+
+---
+
+## 📋 Summary
+
+| Setting                       | Description                          | Performance Impact |
+| ----------------------------- | ------------------------------------ | ------------------ |
+| Data Consistency Verification | Ensures read and write match exactly | 🔼 Slight overhead |
+| Row Count Check               | Compares total rows                  | ✅ Lightweight     |
+| Checksum Validation           | Verifies content integrity           | ⚠️ Medium to heavy |
+
+---
+
+<br>
+<br>
+<br>
+
+✅ In Azure Data Factory (ADF), **Data Consistency Verification** ensures that data is **accurately transferred** from the **source to the sink** in a **Copy Activity**.
+
+But the **details of how it works are limited to logs**, and Microsoft doesn't expose full internal verification logic — however, **you _can_ observe its impact and behavior** through the following methods:
+
+---
+
+## 🔍 1. **Monitor Tab (UI Level)**
+
+Go to:
+
+- ADF Studio → **Monitor** → Select your pipeline run → Click on the **Copy Activity**
+
+There you’ll see:
+
+- ✅ **Status** (Succeeded, Failed, Skipped)
+- ✅ **Rows read vs. written**
+- ✅ **Data consistency verification** (enabled/disabled)
+
+> If the number of **rows read ≠ rows written**, and verification is **enabled**, ADF will **fail the activity**.
+
+🧠 This is your first indication that **consistency check caught a mismatch**.
+
+---
+
+## 🔍 2. **Copy Activity Output Logs (Detailed)**
+
+In the **Activity run output** JSON (click the Copy Activity > "Output" tab), look for:
+
+```json
+{
+  "dataConsistencyVerification": {
+    "verificationEnabled": true,
+    "verificationStatus": "Passed",
+    "rowsRead": 10000,
+    "rowsWritten": 10000
+  }
+}
+```
+
+You might see:
+
+- `"verificationStatus": "Passed"` or `"Failed"`
+- Row counts that help confirm the match
+
+> 🔧 If consistency fails, it logs a warning or error, and the activity **may fail** depending on your settings.
+
+---
+
+## 🔍 3. **Activity Logs via Azure Monitor / Log Analytics (Advanced)**
+
+If you enabled **diagnostic logging** and sent logs to **Log Analytics**:
+
+- You can query it with **Kusto** using `ADFActivityRun` or `ADFActivityRunOutput`
+- Search by activity type: `copy`
+- Filter by pipeline name, timestamp, etc.
+
+This lets you **automate detection** of consistency issues across many runs.
+
+---
+
+## 🧪 Bonus: Enable/Disable Option
+
+You can turn this on/off in Copy Activity:
+
+- Go to **Copy Activity > Settings**
+- Enable or disable **Data Consistency Verification**
+
+> ⚠️ Disabling this skips row count checks — useful for performance, but **risky for accuracy**.
+
+---
+
+### 🚫 What You _Can't_ See:
+
+- ADF doesn’t show _exact row mismatches_ (like "row 123 failed")
+- It doesn’t show partial content or row-level comparison
+- No direct access to checksum-level verification (unless custom logic is added)
+
+---
+
+### ✅ Summary
+
+| Method         | What You See                                 |
+| -------------- | -------------------------------------------- |
+| Monitor tab    | Success/failure, rows read/written           |
+| Output JSON    | Row counts + consistency status              |
+| Log Analytics  | Full audit trail (optional setup)            |
+| Error messages | If mismatch occurs, you’ll get error details |
+
+---
+
+<br>
+<br>
+<br>
+
+# 🔁 **Copy Behavior** in Azure Data Factory (ADF)
+
+## 🔹 **What is it?**
+
+> The **Copy Behavior** setting defines **how the data is physically copied** from source to sink — specifically when writing to file-based sinks like **Blob Storage**, **ADLS**, or **file systems**.
+
+It determines **what happens to file structures**, **file names**, and **data formats** during the copy process.
+
+---
+
+## ⚙️ **Available Copy Behavior Options (based on sink type):**
+
+> (Exact options vary depending on your **sink connector** — here are the most common ones.)
+
+---
+
+### 1. 📝 **Preserve Hierarchy**
+
+- Maintains the **original folder structure** from the source.
+- Example:
+
+  - Source: `/raw/2025/06/file1.csv`
+  - Sink: `/processed/2025/06/file1.csv`
+
+✅ Good for:
+
+- Folder-based ingestion
+- Partitioned data (year/month/day folders)
+
+---
+
+### 2. 📂 **Flatten Hierarchy**
+
+- Ignores folder structure and **copies all files into a single sink folder**.
+- Example:
+
+  - Source: `/raw/2025/06/file1.csv`, `/raw/2025/07/file2.csv`
+  - Sink: `/processed/file1.csv`, `/processed/file2.csv`
+
+✅ Good for:
+
+- Merging all files into one folder
+- Simple archiving
+
+---
+
+### 3. 🔀 **Merge Files**
+
+- Merges **multiple source files** into a **single output file** in the sink.
+- Example:
+
+  - Source: 100 `.csv` files → Sink: `merged.csv`
+
+✅ Good for:
+
+- Preparing consolidated files for reporting or downstream systems
+- Exporting to tools that expect **single-file output**
+
+⚠️ Available only for:
+
+- File-based sources (Blob, ADLS, etc.)
+- File-based sinks
+
+---
+
+### 4. 📎 **None**
+
+- Just performs a **plain copy**, file-by-file, without modifying structure or merging.
+
+---
+
+## 🧾 Summary Table:
+
+| Copy Behavior      | Description                             | Good For                      |
+| ------------------ | --------------------------------------- | ----------------------------- |
+| Preserve Hierarchy | Keeps folder path as-is                 | Partitioned or organized data |
+| Flatten Hierarchy  | Drops all files into one folder         | Simplified outputs            |
+| Merge Files        | Combines multiple source files into one | Reporting, archiving          |
+| None               | Direct 1-to-1 copy                      | Simple file transfers         |
+
+---
+
+## ⚠️ Notes:
+
+- Some behaviors only apply to **binary/text file sources**.
+- Not supported in all connectors (e.g., databases or APIs).
+- **Merge Files** can't be used when sink is partitioned or expects multiple outputs.
+
+---
+
+<br>
+<br>
+<br>
+
+# 📦 **Block Size (MB)** in Azure Data Factory
+
+## 🔹 **What is it?**
+
+> **Block Size (in MB)** defines the **chunk size** (in megabytes) of data that ADF uses when uploading files to **file-based sinks**, like:
+
+- **Azure Blob Storage**
+- **Azure Data Lake Storage**
+- **File system sinks**
+
+Essentially, it's the **buffer size** per data block during file write operations.
+
+---
+
+## 🧠 Why does it matter?
+
+When ADF uploads a large file to Blob or ADLS, it splits the file into **blocks**, uploads them in parallel, and then commits the file.
+
+- **Smaller blocks** → More blocks → Higher metadata overhead
+- **Larger blocks** → Fewer blocks → More efficient uploads, but higher memory use
+
+---
+
+## 📊 Typical Values:
+
+- **Default**: Varies depending on sink type and file size (often around 4 MB or 8 MB)
+- **Custom Range**: You can specify it manually (e.g., 1–100 MB per block)
+
+---
+
+## 🔧 Use Cases:
+
+| Scenario                              | Recommended Block Size                        |
+| ------------------------------------- | --------------------------------------------- |
+| Small files (<100 MB)                 | 4–8 MB (default is fine)                      |
+| Large files (>500 MB)                 | 16–100 MB (larger block = better performance) |
+| Slow network or limited bandwidth     | Smaller blocks for retry efficiency           |
+| Uploading to Blob/ADLS in large scale | Larger blocks for better throughput           |
+
+---
+
+## ⚠️ Considerations:
+
+- Applies only when writing to **file-based sinks** (not SQL, REST, etc.)
+- Setting it too high may cause **memory issues**
+- Setting it too low increases **overhead and write time**
+
+---
+
+## 📝 Example:
+
+You’re copying a **2 GB file** to Azure Blob. You set:
+
+```text
+Block Size (MB) = 16
+```
+
+→ ADF will upload the file in **2 GB / 16 MB = 128 blocks**
+
+---
+
+## ✅ Summary:
+
+| Setting        | Purpose                              | When to Tune                    |
+| -------------- | ------------------------------------ | ------------------------------- |
+| **Block Size** | Controls chunk size for file uploads | Large files or network tuning   |
+| Higher value   | Better for large file performance    | Use with big data pipelines     |
+| Lower value    | Better for reliability, small files  | Use with limited memory systems |
+
+---
+
+<br>
+<br>
+<br>
+
+# 🧾 **Metadata** in Azure Data Factory (ADF)
+
+## 🔹 **What is Metadata in ADF?**
+
+In Azure Data Factory, **metadata refers to the information about your data structure** — such as:
+
+- **File names, sizes, types**
+- **Folder names**
+- **Schema (columns, data types)**
+- **Last modified date/time**
+- **Partition info** (in some scenarios)
+
+This is used **not to move data**, but to **inspect, list, or make decisions** based on file/table characteristics.
+
+---
+
+## 🔧 **Where is "Metadata" Used in ADF?**
+
+### ✅ **1. Get Metadata Activity**
+
+This activity retrieves metadata from:
+
+- **Files or folders** (Blob, ADLS, file system)
+- **Tables** (SQL, Synapse, etc.)
+
+📌 Example:
+You want to:
+
+- Check if a file exists
+- Get file size before copying
+- Filter files by lastModified date
+
+You’d use **Get Metadata** to do that.
+
+---
+
+## 🔍 **Common Field Names from Get Metadata:**
+
+| Field            | Description                          |
+| ---------------- | ------------------------------------ |
+| **itemName**     | File or folder name                  |
+| **childItems**   | List of files/folders in a directory |
+| **lastModified** | Last modified timestamp              |
+| **size**         | File size in bytes                   |
+| **exists**       | Boolean (true/false) if file exists  |
+| **structure**    | Schema of a file or table            |
+| **columnCount**  | Number of columns                    |
+
+---
+
+## 🧠 **Use Cases:**
+
+| Scenario                               | Metadata Use                     |
+| -------------------------------------- | -------------------------------- |
+| **Check if a file arrived**            | Use `exists` property            |
+| **Only copy large files**              | Use `size` property              |
+| **Trigger only on new files**          | Use `lastModified` timestamp     |
+| **Loop through all files in a folder** | Use `childItems` to get the list |
+| **Dynamic column mapping**             | Use `structure` to fetch schema  |
+
+---
+
+## 🛠️ Example Workflow:
+
+1. Use **Get Metadata** to fetch files in `/sales/2025/06/`
+2. Use **ForEach** to loop over `childItems`
+3. Inside loop, use **Copy Data** to load files
+
+---
+
+## 🧾 Summary:
+
+| Feature                | Description                                                 |
+| ---------------------- | ----------------------------------------------------------- |
+| **Metadata**           | Info about structure and properties of files/tables         |
+| **Used In**            | Get Metadata activity, dynamic control flows                |
+| **Typical Properties** | `exists`, `size`, `childItems`, `lastModified`, `structure` |
+
+---
+
+<br>
+<br>
+<br>
+
+# 🧾 **File Pattern** in Azure Data Factory (ADF)
+
+## 🔹 **What is File Pattern?**
+
+> **File Pattern** tells ADF **how to read multiple files** from a folder, especially when working with **delimited text formats** like **CSV**, **JSON**, or **Parquet**.
+
+It defines **how to treat the structure and schema across multiple files** in the **same dataset or source folder**.
+
+---
+
+## ⚙️ **Where You Set It:**
+
+- In the **source settings** of a **Copy Data activity**
+- Or in the **dataset settings** (for file-based sources like Blob, ADLS)
+
+---
+
+## 📂 **Common File Pattern Options:**
+
+| Option                       | Description                                                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Set of Files** _(default)_ | ADF treats **all matching files** as a single logical dataset (merges them row by row). Schema must be consistent. |
+| **Wildcard File**            | Use a pattern like `sales_*.csv` or `*.json` to pick files                                                         |
+| **File List** _(dynamic)_    | Uses a list of files (e.g., from Get Metadata) for processing one-by-one                                           |
+| **Single File Only**         | Tells ADF to read **just one file** — no merging, no directory scan                                                |
+
+---
+
+## 🧠 **Why File Pattern Matters:**
+
+If you're copying from a folder with multiple CSV files:
+
+- **Set of Files** = All files read together (e.g., `UNION ALL`)
+- **Single File** = Reads only one specific file
+- **Wildcard** = Reads files based on name patterns
+- **List of Files** = You manually supply the file list
+
+---
+
+## ✅ **Best Practices:**
+
+| Scenario                                              | Use This Pattern                           |
+| ----------------------------------------------------- | ------------------------------------------ |
+| Daily partitioned files (e.g., `sales_2025_06_*.csv`) | **Wildcard**                               |
+| All files have same schema, to be read together       | **Set of Files**                           |
+| Reading a known, fixed file (e.g., `latest.csv`)      | **Single File**                            |
+| Dynamically filtered list from logic                  | **File List (via Get Metadata + ForEach)** |
+
+---
+
+## 📝 Example:
+
+You have:
+
+```
+/sales/2025/
+  - sales_2025_06_01.csv
+  - sales_2025_06_02.csv
+  - sales_2025_06_03.csv
+```
+
+📌 File Pattern: **Wildcard**
+📌 Wildcard File Name: `sales_2025_06_*.csv`
+
+→ ADF reads all 3 files in one go.
+
+---
+
+## ⚠️ Notes:
+
+- For **Set of Files**, ensure **schema is consistent** across all files
+- You can combine **File Pattern + Partition Discovery + Wildcard Path** for advanced use cases
+- Some file types (like binary) don’t support all file pattern options
+
+---
+
+<br>
+<br>
+<br>

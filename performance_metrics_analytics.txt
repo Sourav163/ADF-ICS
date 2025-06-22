@@ -1,0 +1,62 @@
+---
+
+## 📉 **Disable Performance Metrics Analytics**
+
+---
+
+### 🔹 **What is it?**
+
+This is a **checkbox setting** (usually found in the **Copy Data activity**) that controls whether **detailed performance metrics** are **collected and logged** during pipeline execution.
+
+---
+
+### 🧠 **When enabled (default):**
+
+* ADF collects runtime statistics like:
+
+  * Number of rows read/written
+  * Throughput (rows/sec or MB/sec)
+  * Duration per source/sink
+  * Partition stats
+
+✅ These metrics appear in:
+
+* The **Monitoring tab**
+* **Activity output JSON**
+* **Azure Monitoring Logs (if integrated)**
+
+---
+
+### ❌ **When you check "Disable Performance Metrics Analytics":**
+
+* ADF **does not collect detailed metrics** during execution.
+* Output will show only **basic status info** (success/failure, time).
+
+---
+
+### ✅ **Why/When to disable:**
+
+| Scenario                               | Reason                                                               |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| **High-throughput, large-volume copy** | Disabling metrics can reduce **overhead** and slightly improve speed |
+| **Sensitive environments**             | Avoiding logging of **row counts or schema info** for compliance     |
+| **Troubleshooting minimal setup**      | Want to keep logs lightweight or avoid noisy metrics                 |
+
+---
+
+### ⚠️ Things to Note:
+
+* You **won’t see row counts, size, partitions, or throughput** in the output if disabled
+* Does **not affect data copy** — only affects **logging/performance tracking**
+* Applies **only to that activity**, not the whole pipeline
+
+---
+
+### 🔁 Summary:
+
+| Option                  | Metrics Collected?   | Use When                                     |
+| ----------------------- | -------------------- | -------------------------------------------- |
+| ❌ **Disabled**          | No (basic logs only) | Optimize performance, reduce logging         |
+| ✅ **Enabled** (default) | Yes (detailed logs)  | For monitoring, auditing, performance tuning |
+
+---

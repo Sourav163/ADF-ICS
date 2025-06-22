@@ -1,0 +1,79 @@
+---
+
+## 🧾 **File Pattern** in Azure Data Factory (ADF)
+
+---
+
+### 🔹 **What is File Pattern?**
+
+> **File Pattern** tells ADF **how to read multiple files** from a folder, especially when working with **delimited text formats** like **CSV**, **JSON**, or **Parquet**.
+
+It defines **how to treat the structure and schema across multiple files** in the **same dataset or source folder**.
+
+---
+
+### ⚙️ **Where You Set It:**
+
+* In the **source settings** of a **Copy Data activity**
+* Or in the **dataset settings** (for file-based sources like Blob, ADLS)
+
+---
+
+### 📂 **Common File Pattern Options:**
+
+| Option                       | Description                                                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Set of Files** *(default)* | ADF treats **all matching files** as a single logical dataset (merges them row by row). Schema must be consistent. |
+| **Wildcard File**            | Use a pattern like `sales_*.csv` or `*.json` to pick files                                                         |
+| **File List** *(dynamic)*    | Uses a list of files (e.g., from Get Metadata) for processing one-by-one                                           |
+| **Single File Only**         | Tells ADF to read **just one file** — no merging, no directory scan                                                |
+
+---
+
+### 🧠 **Why File Pattern Matters:**
+
+If you're copying from a folder with multiple CSV files:
+
+* **Set of Files** = All files read together (e.g., `UNION ALL`)
+* **Single File** = Reads only one specific file
+* **Wildcard** = Reads files based on name patterns
+* **List of Files** = You manually supply the file list
+
+---
+
+### ✅ **Best Practices:**
+
+| Scenario                                              | Use This Pattern                           |
+| ----------------------------------------------------- | ------------------------------------------ |
+| Daily partitioned files (e.g., `sales_2025_06_*.csv`) | **Wildcard**                               |
+| All files have same schema, to be read together       | **Set of Files**                           |
+| Reading a known, fixed file (e.g., `latest.csv`)      | **Single File**                            |
+| Dynamically filtered list from logic                  | **File List (via Get Metadata + ForEach)** |
+
+---
+
+### 📝 Example:
+
+You have:
+
+```
+/sales/2025/
+  - sales_2025_06_01.csv
+  - sales_2025_06_02.csv
+  - sales_2025_06_03.csv
+```
+
+📌 File Pattern: **Wildcard**
+📌 Wildcard File Name: `sales_2025_06_*.csv`
+
+→ ADF reads all 3 files in one go.
+
+---
+
+### ⚠️ Notes:
+
+* For **Set of Files**, ensure **schema is consistent** across all files
+* You can combine **File Pattern + Partition Discovery + Wildcard Path** for advanced use cases
+* Some file types (like binary) don’t support all file pattern options
+
+---

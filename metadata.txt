@@ -1,0 +1,83 @@
+---
+
+## 🧾 **Metadata** in Azure Data Factory (ADF)
+
+---
+
+### 🔹 **What is Metadata in ADF?**
+
+In Azure Data Factory, **metadata refers to the information about your data structure** — such as:
+
+* **File names, sizes, types**
+* **Folder names**
+* **Schema (columns, data types)**
+* **Last modified date/time**
+* **Partition info** (in some scenarios)
+
+This is used **not to move data**, but to **inspect, list, or make decisions** based on file/table characteristics.
+
+---
+
+### 🔧 **Where is "Metadata" Used in ADF?**
+
+#### ✅ **1. Get Metadata Activity**
+
+This activity retrieves metadata from:
+
+* **Files or folders** (Blob, ADLS, file system)
+* **Tables** (SQL, Synapse, etc.)
+
+📌 Example:
+You want to:
+
+* Check if a file exists
+* Get file size before copying
+* Filter files by lastModified date
+
+You’d use **Get Metadata** to do that.
+
+---
+
+### 🔍 **Common Field Names from Get Metadata:**
+
+| Field            | Description                          |
+| ---------------- | ------------------------------------ |
+| **itemName**     | File or folder name                  |
+| **childItems**   | List of files/folders in a directory |
+| **lastModified** | Last modified timestamp              |
+| **size**         | File size in bytes                   |
+| **exists**       | Boolean (true/false) if file exists  |
+| **structure**    | Schema of a file or table            |
+| **columnCount**  | Number of columns                    |
+
+---
+
+### 🧠 **Use Cases:**
+
+| Scenario                               | Metadata Use                     |
+| -------------------------------------- | -------------------------------- |
+| **Check if a file arrived**            | Use `exists` property            |
+| **Only copy large files**              | Use `size` property              |
+| **Trigger only on new files**          | Use `lastModified` timestamp     |
+| **Loop through all files in a folder** | Use `childItems` to get the list |
+| **Dynamic column mapping**             | Use `structure` to fetch schema  |
+
+---
+
+### 🛠️ Example Workflow:
+
+1. Use **Get Metadata** to fetch files in `/sales/2025/06/`
+2. Use **ForEach** to loop over `childItems`
+3. Inside loop, use **Copy Data** to load files
+
+---
+
+### 🧾 Summary:
+
+| Feature                | Description                                                 |
+| ---------------------- | ----------------------------------------------------------- |
+| **Metadata**           | Info about structure and properties of files/tables         |
+| **Used In**            | Get Metadata activity, dynamic control flows                |
+| **Typical Properties** | `exists`, `size`, `childItems`, `lastModified`, `structure` |
+
+---

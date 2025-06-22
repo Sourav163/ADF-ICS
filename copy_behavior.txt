@@ -1,0 +1,93 @@
+---
+
+## 🔁 **Copy Behavior** in Azure Data Factory (ADF)
+
+---
+
+### 🔹 **What is it?**
+
+> The **Copy Behavior** setting defines **how the data is physically copied** from source to sink — specifically when writing to file-based sinks like **Blob Storage**, **ADLS**, or **file systems**.
+
+It determines **what happens to file structures**, **file names**, and **data formats** during the copy process.
+
+---
+
+### ⚙️ **Available Copy Behavior Options (based on sink type):**
+
+> (Exact options vary depending on your **sink connector** — here are the most common ones.)
+
+---
+
+### 1. 📝 **Preserve Hierarchy**
+
+* Maintains the **original folder structure** from the source.
+* Example:
+
+  * Source: `/raw/2025/06/file1.csv`
+  * Sink: `/processed/2025/06/file1.csv`
+
+✅ Good for:
+
+* Folder-based ingestion
+* Partitioned data (year/month/day folders)
+
+---
+
+### 2. 📂 **Flatten Hierarchy**
+
+* Ignores folder structure and **copies all files into a single sink folder**.
+* Example:
+
+  * Source: `/raw/2025/06/file1.csv`, `/raw/2025/07/file2.csv`
+  * Sink: `/processed/file1.csv`, `/processed/file2.csv`
+
+✅ Good for:
+
+* Merging all files into one folder
+* Simple archiving
+
+---
+
+### 3. 🔀 **Merge Files**
+
+* Merges **multiple source files** into a **single output file** in the sink.
+* Example:
+
+  * Source: 100 `.csv` files → Sink: `merged.csv`
+
+✅ Good for:
+
+* Preparing consolidated files for reporting or downstream systems
+* Exporting to tools that expect **single-file output**
+
+⚠️ Available only for:
+
+* File-based sources (Blob, ADLS, etc.)
+* File-based sinks
+
+---
+
+### 4. 📎 **None**
+
+* Just performs a **plain copy**, file-by-file, without modifying structure or merging.
+
+---
+
+### 🧾 Summary Table:
+
+| Copy Behavior      | Description                             | Good For                      |
+| ------------------ | --------------------------------------- | ----------------------------- |
+| Preserve Hierarchy | Keeps folder path as-is                 | Partitioned or organized data |
+| Flatten Hierarchy  | Drops all files into one folder         | Simplified outputs            |
+| Merge Files        | Combines multiple source files into one | Reporting, archiving          |
+| None               | Direct 1-to-1 copy                      | Simple file transfers         |
+
+---
+
+### ⚠️ Notes:
+
+* Some behaviors only apply to **binary/text file sources**.
+* Not supported in all connectors (e.g., databases or APIs).
+* **Merge Files** can't be used when sink is partitioned or expects multiple outputs.
+
+---

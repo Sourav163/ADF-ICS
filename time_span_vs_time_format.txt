@@ -1,0 +1,66 @@
+The key difference lies in **how the .NET DateTime format system** (which ADF internally uses) treats **time spans** vs **formatted time values** like clock time.
+
+Let’s break this down clearly:
+
+---
+
+### 🔹 1. **TimeSpan Format (`hh\:mm\:ss`)**
+
+#### ✅ Example:
+
+* Source Value: `"02:30:00"`
+* Format: `hh\:mm\:ss`
+
+#### 🧠 Why the backslash (`\`)?
+
+* In **.NET**, colons (`:`) are **format specifiers**, not literal characters.
+* So to include a **literal colon** in the output or parsing format, you must **escape it** with a backslash (`\:`).
+
+#### 👉 Explanation:
+
+* `hh` = hours
+* `mm` = minutes
+* `ss` = seconds
+* `\:` = *literal* colon
+
+✔ Without the backslash, `.NET` would misinterpret `:` as a format character (which means something else), and ADF would fail to parse the value.
+
+---
+
+### 🔹 2. **Time Format (`hh:mm tt`)**
+
+#### ✅ Example:
+
+* Source Value: `"03:45 PM"`
+* Format: `hh:mm tt`
+
+#### 🔍 Why **no backslash** here?
+
+* When formatting a **DateTime** (not TimeSpan), **`:` is automatically treated as a literal colon**, so **no escaping is needed**.
+
+#### 👉 Explanation:
+
+* `hh` = 12-hour clock hour
+* `mm` = minutes
+* `tt` = AM/PM designator
+* `:` = literal colon is accepted directly
+
+✔ For `DateTime` values, the colon is **treated literally** by default in format strings.
+
+---
+
+### 🔄 Summary Table
+
+| Format Type  | Example Input | Format String | Why `:` is Escaped?                                     |
+| ------------ | ------------- | ------------- | ------------------------------------------------------- |
+| **TimeSpan** | `"02:30:00"`  | `hh\:mm\:ss`  | Because `:` is special in .NET TimeSpan formatting      |
+| **Time**     | `"03:45 PM"`  | `hh:mm tt`    | No escape needed; `:` is treated as literal in DateTime |
+
+---
+
+### 🧠 Remember:
+
+* Use `\:` in `TimeSpan` format (like durations)
+* No need for `\:` in `DateTime`/`time` format (like clock time)
+
+Let me know if you'd like a cheat sheet of ADF date/time format strings!

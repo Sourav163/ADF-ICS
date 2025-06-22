@@ -1,0 +1,78 @@
+---
+
+## 🔀 **Degree of Copy Parallelism** in **Azure Data Factory**
+
+---
+
+### 🔹 **What is it?**
+
+> This setting controls **how many data partitions/files/objects ADF processes in parallel** during a **Copy Data activity**.
+
+It’s like saying:
+
+> “How many pieces of data can I copy at the **same time**?”
+
+---
+
+### 🧠 **When does it matter?**
+
+* When you're copying:
+
+  * Multiple **files** from a folder
+  * Multiple **tables** from a database
+  * Partitioned data (like in Data Lake or SQL)
+
+This setting **boosts performance** through **parallel processing**.
+
+---
+
+### ⚙️ **How it works:**
+
+* ADF automatically splits the data source into partitions or chunks.
+* **Degree of copy parallelism** defines how many of those partitions can be processed **in parallel**.
+
+✅ Example:
+
+* You’re copying **20 CSV files** from Blob.
+* **Degree of parallelism = 5** → ADF copies 5 files **simultaneously**, then the next 5, and so on.
+
+---
+
+### 🎯 When to tune it:
+
+| Situation                                                    | Recommendation                   |
+| ------------------------------------------------------------ | -------------------------------- |
+| Source/target supports high concurrency (e.g., Blob, SQL DW) | 🔼 Increase it                   |
+| Source/target is slow, fragile, or rate-limited              | 🔽 Lower it                      |
+| Files are small and many                                     | 🔼 Increase to reduce total time |
+| You get throttling or errors                                 | 🔽 Reduce parallelism            |
+
+---
+
+### 📌 Where to configure:
+
+* **Copy Activity → Source tab → Additional Settings**
+* Field: **Degree of copy parallelism** (default: 4 or auto)
+
+---
+
+### ⚠️ Notes:
+
+* Too high = may cause:
+
+  * Source system overload
+  * Throttling
+  * Pipeline failure
+* Combine with **"Max concurrent connections"** to fine-tune behavior
+
+---
+
+### 🧾 Summary:
+
+| Setting                    | What It Does                              |
+| -------------------------- | ----------------------------------------- |
+| Degree of copy parallelism | How many partitions/files to copy at once |
+| Higher value               | Faster, but riskier for fragile systems   |
+| Lower value                | Safer, but slower                         |
+
+---

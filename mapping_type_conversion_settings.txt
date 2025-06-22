@@ -1,0 +1,123 @@
+Diving into the **Type Conversion Settings** — a crucial part of **data integrity and formatting** in **ADF Copy Data activities** when dealing with schema mapping between source and sink.
+
+Let’s go through each setting one by one with clear, brief explanations:
+
+---
+
+## ⚙️ **Type Conversion Settings (ADF Copy Data)**
+
+---
+
+### 🔹 **Allow Data Truncation**
+
+* ✅ When enabled: Allows ADF to **truncate (cut off)** data that exceeds the destination column size (e.g., strings).
+* ❌ When disabled (default): Copy will **fail** if a value is too large for the destination field.
+
+📌 Example:
+
+* Source: `VARCHAR(200)` → Sink: `VARCHAR(50)`
+
+  * If truncation is allowed → "abcdef..." will be cut to 50 chars
+  * If not → activity fails
+
+---
+
+### 🔹 **Treat Boolean as Number**
+
+* ✅ When enabled: `true/false` values will be converted to `1/0`
+* ❌ When disabled: May cause error if sink expects numeric
+
+📌 Example:
+
+* Source: `true` → Sink: expects `INT`
+
+  * With this ON → `1` gets inserted
+  * With this OFF → might fail unless sink supports boolean
+
+---
+
+### 🔹 **Date Format**
+
+Specifies the **format of date values** from the source, if they’re in **string format**.
+
+📌 Example:
+
+* Source has: `"13-06-2025"` → Set date format to: `dd-MM-yyyy`
+* Helps ADF **parse string as date** correctly
+
+---
+
+### 🔹 **DateTime Format**
+
+Same as `Date Format`, but includes **time**.
+
+📌 Example:
+
+* String: `"2025-06-13 15:30:00"` → Format: `yyyy-MM-dd HH:mm:ss`
+* ADF will convert string to proper datetime type if defined
+
+---
+
+### 🔹 **DateTimeOffset Format**
+
+Use when dealing with **datetime values that include a time zone offset**.
+
+📌 Example:
+
+* `"2025-06-13T10:30:00+05:30"` → Format: `yyyy-MM-ddTHH:mm:sszzz`
+* Ensures proper recognition of timezone info
+
+---
+
+### 🔹 **TimeSpan Format**
+
+Defines format for **durations** like "2 hours, 30 minutes".
+
+📌 Example:
+
+* Source: `"02:30:00"` → Format: `hh\:mm\:ss`
+* Converts string durations into actual `TimeSpan` data type
+
+---
+
+### 🔹 **Time Format**
+
+Specifies the format of **time-only** fields (without date).
+
+📌 Example:
+
+* Source: `"03:45 PM"` → Format: `hh:mm tt`
+* Or `"15:45"` → `HH:mm`
+
+---
+
+### 🌍 **Culture**
+
+Defines the **culture/locale settings** used for parsing dates, numbers, etc.
+
+📌 Example:
+
+* `en-US` → uses `MM/dd/yyyy`, comma as thousand separator
+* `fr-FR` → uses `dd/MM/yyyy`, semicolon or space as separator
+
+✅ Helps ensure correct parsing for:
+
+* Numbers (`1,000.50` vs `1.000,50`)
+* Dates (`06/13/2025` vs `13/06/2025`)
+
+---
+
+## 🔁 Summary Table:
+
+| Setting                 | Purpose                             | Example Format           |
+| ----------------------- | ----------------------------------- | ------------------------ |
+| Allow Data Truncation   | Trim oversize data or fail          | Yes/No                   |
+| Treat Boolean as Number | Convert true/false → 1/0            | Yes/No                   |
+| Date Format             | Parse string as date                | `dd-MM-yyyy`             |
+| DateTime Format         | Parse string as datetime            | `yyyy-MM-dd HH:mm:ss`    |
+| DateTimeOffset Format   | Parse string with timezone          | `yyyy-MM-ddTHH:mm:sszzz` |
+| TimeSpan Format         | Handle durations (e.g., 02:15:00)   | `hh\:mm\:ss`             |
+| Time Format             | Parse time-only values              | `HH:mm`                  |
+| Culture                 | Controls number/date parsing locale | `en-US`, `fr-FR`         |
+
+---

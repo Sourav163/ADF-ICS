@@ -1,0 +1,166 @@
+---
+
+## ✅ **Data Consistency Verification** in Azure Data Factory (ADF)
+
+---
+
+### 🔹 **What is it?**
+
+> This setting enables **validation checks** to ensure the **data copied from source to sink is accurate and complete** — based on **row counts** and/or **checksums**.
+
+In short:
+
+> ADF compares what was read vs. what was written.
+
+---
+
+### 🔍 **Types of Verifications:**
+
+When **Data Consistency Verification** is enabled, ADF may perform:
+
+1. **Row Count Comparison**
+
+   * ✅ Compares **number of rows read** from source vs **written** to sink
+
+2. **Checksum Verification** *(only for certain connectors)*
+
+   * ✅ Validates content integrity using a **hash value** on rows/columns
+
+---
+
+### ⚙️ **Where to enable it:**
+
+* Inside a **Copy Data activity** → **Sink tab** → Additional settings
+* Checkbox: **“Enable data consistency verification”**
+
+---
+
+### 🧠 **When to use it:**
+
+| Scenario                                       | Benefit                            |
+| ---------------------------------------------- | ---------------------------------- |
+| Copying financial or critical data             | Detect **data loss or corruption** |
+| Copying between systems that may fail silently | Catch **partial loads**            |
+| Compliance / Auditing requirements             | Ensures **record-level accuracy**  |
+
+---
+
+### ⚠️ Things to Note:
+
+* Slight **performance impact** (especially with large data sets)
+
+  * Row count validation is lightweight
+  * Checksum validation (if applicable) is heavier
+* Only works with **compatible connectors** (e.g., Blob → SQL)
+* If verification fails, **copy activity will fail** with an error
+
+---
+
+### 🧾 Example:
+
+You're copying 10 million records from a data lake to Azure SQL:
+
+* **Enabled** → ADF verifies that **10 million rows** went in and out correctly
+* If only 9,999,000 made it to the sink → the activity **fails with a mismatch error**
+
+---
+
+### ✅ Summary:
+
+| Setting                       | Purpose                            | Impact                      |
+| ----------------------------- | ---------------------------------- | --------------------------- |
+| Data Consistency Verification | Ensures source and sink data match | Slight performance overhead |
+| Row Count Check               | Compares rows read vs written      | Lightweight                 |
+| Checksum Validation           | Compares hash values for integrity | Medium to heavy             |
+
+---
+
+✅ In Azure Data Factory (ADF), **Data Consistency Verification** ensures that data is **accurately transferred** from the **source to the sink** in a **Copy Activity**.
+
+But the **details of how it works are limited to logs**, and Microsoft doesn't expose full internal verification logic — however, **you *can* observe its impact and behavior** through the following methods:
+
+---
+
+## 🔍 1. **Monitor Tab (UI Level)**
+
+Go to:
+
+* ADF Studio → **Monitor** → Select your pipeline run → Click on the **Copy Activity**
+
+There you’ll see:
+
+* ✅ **Status** (Succeeded, Failed, Skipped)
+* ✅ **Rows read vs. written**
+* ✅ **Data consistency verification (enabled/disabled)**
+
+> If the number of **rows read ≠ rows written**, and verification is **enabled**, ADF will **fail the activity**.
+
+🧠 This is your first indication that **consistency check caught a mismatch**.
+
+---
+
+## 🔍 2. **Copy Activity Output Logs (Detailed)**
+
+In the **Activity run output** JSON (click the Copy Activity > "Output" tab), look for:
+
+```json
+{
+  "dataConsistencyVerification": {
+    "verificationEnabled": true,
+    "verificationStatus": "Passed",
+    "rowsRead": 10000,
+    "rowsWritten": 10000
+  }
+}
+```
+
+You might see:
+
+* `"verificationStatus": "Passed"` or `"Failed"`
+* Row counts that help confirm the match
+
+> 🔧 If consistency fails, it logs a warning or error, and the activity **may fail** depending on your settings.
+
+---
+
+## 🔍 3. **Activity Logs via Azure Monitor / Log Analytics (Advanced)**
+
+If you enabled **diagnostic logging** and sent logs to **Log Analytics**:
+
+* You can query it with **Kusto** using `ADFActivityRun` or `ADFActivityRunOutput`
+* Search by activity type: `copy`
+* Filter by pipeline name, timestamp, etc.
+
+This lets you **automate detection** of consistency issues across many runs.
+
+---
+
+## 🧪 Bonus: Enable/Disable Option
+
+You can turn this on/off in Copy Activity:
+
+* Go to **Copy Activity > Settings**
+* Enable or disable **Data Consistency Verification**
+
+> ⚠️ Disabling this skips row count checks — useful for performance, but **risky for accuracy**.
+
+---
+
+### 🚫 What You *Can't* See:
+
+* ADF doesn’t show *exact row mismatches* (like "row 123 failed")
+* It doesn’t show partial content or row-level comparison
+* No direct access to checksum-level verification (unless custom logic is added)
+
+---
+
+### ✅ Summary
+
+| Method         | What You See                                 |
+| -------------- | -------------------------------------------- |
+| Monitor tab    | Success/failure, rows read/written           |
+| Output JSON    | Row counts + consistency status              |
+| Log Analytics  | Full audit trail (optional setup)            |
+| Error messages | If mismatch occurs, you’ll get error details |
+
+---
