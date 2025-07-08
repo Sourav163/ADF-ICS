@@ -119,3 +119,152 @@ If Unroll root is incorrect or points to a non-array, the Flatten will either do
 
 Would you like a sample JSON + mapping data flow template to try this out directly in ADF UI?
 
+<br>
+<br>
+<br>
+
+Perfect — let's go into full hands-on mode and walk through a working ADF Flatten transformation example with and without Unroll root using realistic nested JSON data. Since you're absolutely right that Unroll by is mandatory, I’ll include that properly.
+
+
+---
+
+✅ Scenario Setup:
+
+You're working with the following nested JSON structure:
+
+[
+  {
+    "orderId": 1001,
+    "customer": {
+      "name": "Sourav",
+      "contacts": [
+        { "type": "email", "value": "sourav@example.com" },
+        { "type": "phone", "value": "1234567890" }
+      ]
+    }
+  },
+  {
+    "orderId": 1002,
+    "customer": {
+      "name": "Ananta",
+      "contacts": [
+        { "type": "email", "value": "ananta@example.com" }
+      ]
+    }
+  }
+]
+
+🧾 Objective:
+
+Flatten the contacts array under customer, so each contact (email/phone) becomes its own row, while keeping orderId and customer.name.
+
+
+---
+
+✅ WITH Unroll root
+
+🔧 Flatten Transformation Settings:
+
+Field	Value
+
+Unroll root	customer.contacts
+Unroll by	item (or whatever name you give to individual contact entries)
+
+
+> ADF will iterate over the contacts array and output one row per contact.
+
+
+
+
+---
+
+🧾 Output (flattened):
+
+orderId	customer.name	type	value
+
+1001	Sourav	email	sourav@example.com
+1001	Sourav	phone	1234567890
+1002	Ananta	email	ananta@example.com
+
+
+> ✅ This is the correct and desired output — each contact becomes a row.
+
+
+
+
+---
+
+🚫 WITHOUT Unroll root
+
+🔧 Flatten Transformation Settings:
+
+Field	Value
+
+Unroll root	leave blank
+Unroll by	You will not see customer.contacts here!
+
+
+> ADF doesn’t know where the array is — it expects the array at the root level, but our array is inside customer.
+
+
+
+
+---
+
+🧾 Output:
+
+orderId	customer
+
+1001	{...}
+1002	{...}
+
+
+> ❌ No flattening occurs. You’ll either get nested JSON or a failure depending on your sink or preview.
+
+
+
+
+---
+
+🛠 How to Try This Practically:
+
+1. Create a new Mapping Data Flow
+
+
+2. Add a Source → point it to a JSON file with the above structure
+
+
+3. Add a Flatten transformation
+
+
+4. In Flatten:
+
+Set Unroll root = customer.contacts
+
+Set Unroll by = item
+
+
+
+5. Add a Derived Column (optional) to pull item.type, item.value, customer.name, etc.
+
+
+6. Add a Sink or Data Preview
+
+
+
+
+---
+
+✅ Summary:
+
+Setting	Behavior
+
+Unroll root = customer.contacts<br>Unroll by = item	Flattens contacts inside each customer
+Unroll root blank	Doesn’t work, because contacts are nested and not at root
+
+
+
+---
+
+Would you like a JSON test file and a complete ADF Data Flow JSON template to import and try it immediately?
+
