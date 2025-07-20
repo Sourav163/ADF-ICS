@@ -1,0 +1,18 @@
+CustomerID,Name,LoyaltyTier,IsActive
+C001,Arjun Rao,Gold,true
+C002,Neha Patel,Silver,false
+C003,Ravi Kumar,Gold,true
+C004,Mike Ross,Silver,true
+C005,Sarah Lee,Bronze,true
+C006,John Wick,None,true
+C007,Priya Sharma,Silver,true
+C008,Amit Singh,Bronze,false
+C009,Ananya Gupta,Gold,true
+C010,Raj Verma,Silver,true
+C011,David Wilson,Gold,true
+C012,Lisa Ray,None,false
+C013,Robert Chen,Silver,true
+C014,Emily Davis,Bronze,true
+C015,Kevin Martin,Gold,false
+C016,Sophia Clark,Silver,true
+C017,Daniel Brown,None,true

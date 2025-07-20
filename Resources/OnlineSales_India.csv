@@ -1,0 +1,11 @@
+SaleID,CustomerID,ProductID,SaleDate,Quantity,SaleAmount,Country,Status
+S001,C001,P101,2024-12-01,2,1000,India,Completed
+S002,C002,P102,2024-12-02,1,500,India,Cancelled
+S003,C003,P103,2024-12-03,3,1500,India,Completed
+S007,C001,P104,2024-12-04,1,400,India,Completed
+S008,C005,P101,2024-12-05,2,1000,India,Failed
+S009,C006,P102,2024-12-06,4,1000,India,Completed
+S010,C007,P105,2024-12-07,1,600,India,Processing
+S011,C008,P103,2024-12-08,2,1000,India,Completed
+S012,C009,P104,2024-12-09,3,1200,India,Cancelled
+S013,C010,P101,2024-12-10,1,500,India,Completed
